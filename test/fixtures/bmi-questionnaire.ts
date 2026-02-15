@@ -1,4 +1,4 @@
-import type { Questionnaire, QuestionnaireResponse } from "../../src/types.js";
+import type { Questionnaire, QuestionnaireResponse } from "../../src/model/types.js";
 
 export const bmiQuestionnaire: Questionnaire = {
   resourceType: "Questionnaire",

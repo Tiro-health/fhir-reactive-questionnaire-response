@@ -1,11 +1,11 @@
 import { useRef } from "react";
 import {
-  ReactiveQuestionnaireResponse,
+  buildQuestionnaireResponse,
   optionDisplay,
 } from "../src/index.js";
-import type { ReactiveResponseItem, AnswerValue } from "../src/index.js";
-import type { ReactiveAnswerOption } from "../src/ReactiveAnswerOption.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
+import type { QuestionnaireResponseModel, ResponseItem, AnswerValue } from "../src/index.js";
+import type { AnswerOption } from "../src/model/AnswerOption.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 import { useComputed } from "./useComputed.js";
 
 interface DemoFormProps {
@@ -14,9 +14,9 @@ interface DemoFormProps {
 }
 
 export function DemoForm({ questionnaire, response }: DemoFormProps) {
-  const modelRef = useRef<ReactiveQuestionnaireResponse | undefined>(undefined);
+  const modelRef = useRef<QuestionnaireResponseModel | undefined>(undefined);
   if (!modelRef.current) {
-    modelRef.current = new ReactiveQuestionnaireResponse(questionnaire, response);
+    modelRef.current = buildQuestionnaireResponse(questionnaire, response);
   }
   const model = modelRef.current;
   const heading = questionnaire.title ?? questionnaire.id ?? "Questionnaire";
@@ -33,7 +33,7 @@ export function DemoForm({ questionnaire, response }: DemoFormProps) {
   );
 }
 
-function ItemRenderer({ item }: { item: ReactiveResponseItem }) {
+function ItemRenderer({ item }: { item: ResponseItem }) {
   const enabled = useComputed(() => item.enabled);
 
   if (item.type === "group") {
@@ -63,7 +63,7 @@ function ItemRenderer({ item }: { item: ReactiveResponseItem }) {
   );
 }
 
-function InputRenderer({ item }: { item: ReactiveResponseItem }) {
+function InputRenderer({ item }: { item: ResponseItem }) {
   const answers = useComputed(() => item.answer);
   const isCalculated = item.calculatedExpression !== null;
 
@@ -173,7 +173,7 @@ function InputRenderer({ item }: { item: ReactiveResponseItem }) {
 }
 
 interface ChoiceOptionProps {
-  option: ReactiveAnswerOption;
+  option: AnswerOption;
   linkId: string;
   selected: AnswerValue | null | undefined;
   readOnly: boolean;
@@ -208,7 +208,7 @@ function ChoiceOption({
   );
 }
 
-function FhirOutput({ model }: { model: ReactiveQuestionnaireResponse }) {
+function FhirOutput({ model }: { model: QuestionnaireResponseModel }) {
   const fhir = useComputed(() => model.toFhir());
   return <pre>{JSON.stringify(fhir, null, 2)}</pre>;
 }

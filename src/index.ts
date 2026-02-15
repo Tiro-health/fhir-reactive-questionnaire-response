@@ -1,8 +1,13 @@
-export { ReactiveQuestionnaireResponse } from "./ReactiveQuestionnaireResponse.js";
-export { ReactiveResponseItem } from "./ReactiveResponseItem.js";
-export { ReactiveAnswerOption, optionDisplay } from "./ReactiveAnswerOption.js";
-export { evaluateFhirPath } from "./fhirpath-context.js";
-export { evaluateEnableWhen } from "./enable-when.js";
+// Model
+export { QuestionnaireResponseModel } from "./model/QuestionnaireResponse.js";
+export { ResponseItem } from "./model/ResponseItem.js";
+export { AnswerOption, optionDisplay } from "./model/AnswerOption.js";
+export type * from "./model/types.js";
+
+// Build
+export { buildQuestionnaireResponse } from "./build/build.js";
+export { evaluateFhirPath } from "./build/fhirpath-context.js";
+export { evaluateEnableWhen } from "./build/enable-when.js";
 export {
   CALCULATED_EXPRESSION,
   ENABLE_WHEN_EXPRESSION,
@@ -11,5 +16,9 @@ export {
   getEnableWhenExpression,
   getAnswerOptionsToggleExpressions,
   answerValuesMatch,
-} from "./extensions.js";
-export type * from "./types.js";
+} from "./build/extensions.js";
+
+// Backwards-compatible aliases
+export { QuestionnaireResponseModel as ReactiveQuestionnaireResponse } from "./model/QuestionnaireResponse.js";
+export { ResponseItem as ReactiveResponseItem } from "./model/ResponseItem.js";
+export { AnswerOption as ReactiveAnswerOption } from "./model/AnswerOption.js";

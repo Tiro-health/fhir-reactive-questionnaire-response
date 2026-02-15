@@ -5,7 +5,7 @@ import type {
   EnableWhen,
   EnableWhenOperator,
   Quantity,
-} from "./types.js";
+} from "../model/types.js";
 
 /**
  * Evaluate a list of enableWhen conditions against current answers.

@@ -1,8 +1,8 @@
 import { LitElement, html, css } from "lit";
 import { SignalWatcher } from "@lit-labs/signals";
-import { ReactiveQuestionnaireResponse, optionDisplay } from "../src/index.js";
-import type { ReactiveResponseItem } from "../src/index.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
+import { buildQuestionnaireResponse, optionDisplay } from "../src/index.js";
+import type { QuestionnaireResponseModel, ResponseItem } from "../src/index.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 
 class DemoForm extends SignalWatcher(LitElement) {
   static properties = {
@@ -10,7 +10,7 @@ class DemoForm extends SignalWatcher(LitElement) {
     heading: { type: String },
   };
 
-  declare model: ReactiveQuestionnaireResponse;
+  declare model: QuestionnaireResponseModel;
   declare heading: string;
 
   constructor() {
@@ -56,7 +56,7 @@ class DemoForm extends SignalWatcher(LitElement) {
     }
   `;
 
-  private renderItem(item: ReactiveResponseItem): unknown {
+  private renderItem(item: ResponseItem): unknown {
     if (item.type === "group") {
       return html`
         <fieldset class="item ${item.enabled ? "" : "disabled"}">
@@ -80,7 +80,7 @@ class DemoForm extends SignalWatcher(LitElement) {
     `;
   }
 
-  private renderInput(item: ReactiveResponseItem, readonly: boolean): unknown {
+  private renderInput(item: ResponseItem, readonly: boolean): unknown {
     const answers = item.answer;
 
     switch (item.type) {
@@ -168,7 +168,7 @@ export function createForm(
   response: QuestionnaireResponse,
 ): DemoForm {
   const el = document.createElement("demo-form") as DemoForm;
-  el.model = new ReactiveQuestionnaireResponse(questionnaire, response);
+  el.model = buildQuestionnaireResponse(questionnaire, response);
   el.heading = questionnaire.title ?? questionnaire.id ?? "Questionnaire";
   return el;
 }

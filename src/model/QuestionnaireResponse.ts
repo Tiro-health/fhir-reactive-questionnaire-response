@@ -1,48 +1,44 @@
-import type { Questionnaire, QuestionnaireResponse } from "./types.js";
-import {
-  ReactiveResponseItem,
-  hydrateChildren,
-} from "./ReactiveResponseItem.js";
+import type { QuestionnaireResponse } from "./types.js";
+import type { ResponseItem } from "./ResponseItem.js";
 
-export class ReactiveQuestionnaireResponse {
+export class QuestionnaireResponseModel {
   readonly resourceType = "QuestionnaireResponse" as const;
   readonly id: string | undefined;
   readonly status: string;
   readonly questionnaire: string | undefined;
 
-  readonly items: ReactiveResponseItem[];
-  readonly itemsByLinkId: Map<string, ReactiveResponseItem[]>;
-  readonly itemById: Map<string, ReactiveResponseItem>;
+  readonly items: ResponseItem[];
+  readonly itemsByLinkId: Map<string, ResponseItem[]>;
+  readonly itemById: Map<string, ResponseItem>;
 
-  get item(): ReactiveResponseItem[] {
+  get item(): ResponseItem[] {
     return this.items;
   }
 
-  constructor(questionnaire: Questionnaire, response?: QuestionnaireResponse) {
-    this.id = response?.id;
-    this.status = response?.status ?? "in-progress";
-    this.questionnaire = response?.questionnaire ?? questionnaire.id;
+  constructor(opts: {
+    id?: string;
+    status: string;
+    questionnaire?: string;
+    items: ResponseItem[];
+  }) {
+    this.id = opts.id;
+    this.status = opts.status;
+    this.questionnaire = opts.questionnaire;
+    this.items = opts.items;
 
     this.itemsByLinkId = new Map();
     this.itemById = new Map();
-
-    this.items = hydrateChildren(
-      questionnaire.item ?? [],
-      response?.item ?? [],
-      this,
-      this,
-    );
   }
 
-  getItems(linkId: string): ReactiveResponseItem[] {
+  getItems(linkId: string): ResponseItem[] {
     return this.itemsByLinkId.get(linkId) ?? [];
   }
 
-  getItemById(id: string): ReactiveResponseItem | undefined {
+  getItemById(id: string): ResponseItem | undefined {
     return this.itemById.get(id);
   }
 
-  registerItem(item: ReactiveResponseItem): void {
+  registerItem(item: ResponseItem): void {
     const existing = this.itemsByLinkId.get(item.linkId);
     if (existing) {
       existing.push(item);
@@ -69,8 +65,8 @@ export class ReactiveQuestionnaireResponse {
     return result;
   }
 
-  forEachItem(fn: (item: ReactiveResponseItem) => void): void {
-    const walk = (items: ReactiveResponseItem[]) => {
+  forEachItem(fn: (item: ResponseItem) => void): void {
+    const walk = (items: ResponseItem[]) => {
       for (const item of items) {
         fn(item);
         walk(item.items);

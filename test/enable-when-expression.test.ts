@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ReactiveQuestionnaireResponse } from "../src/ReactiveQuestionnaireResponse.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
+import { buildQuestionnaireResponse } from "../src/build/build.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 
 describe("enableWhenExpression", () => {
   const questionnaire: Questionnaire = {
@@ -41,7 +41,7 @@ describe("enableWhenExpression", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     const [details] = rqr.getItems("allergy-details");
 
     expect(details.enabled).toBe(false);
@@ -57,7 +57,7 @@ describe("enableWhenExpression", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     const [details] = rqr.getItems("allergy-details");
 
     expect(details.enabled).toBe(true);
@@ -73,7 +73,7 @@ describe("enableWhenExpression", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     const [toggle] = rqr.getItems("has-allergies");
     const [details] = rqr.getItems("allergy-details");
 
@@ -85,7 +85,7 @@ describe("enableWhenExpression", () => {
   });
 
   it("defaults to enabled when no enableWhenExpression is present", () => {
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire);
+    const rqr = buildQuestionnaireResponse(questionnaire);
     const [toggle] = rqr.getItems("has-allergies");
 
     expect(toggle.enabled).toBe(true);
@@ -101,7 +101,7 @@ describe("enableWhenExpression", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     const [toggle] = rqr.getItems("has-allergies");
     const [details] = rqr.getItems("allergy-details");
 

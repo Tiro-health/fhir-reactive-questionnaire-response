@@ -1,7 +1,7 @@
 import { Signal } from "@lit-labs/signals";
 import type { AnswerValue, Coding } from "./types.js";
 
-export class ReactiveAnswerOption {
+export class AnswerOption {
   readonly value: AnswerValue;
   readonly initialSelected: boolean;
   readonly #enabled: Signal.Computed<boolean>;

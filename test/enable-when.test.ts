@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ReactiveQuestionnaireResponse } from "../src/ReactiveQuestionnaireResponse.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
+import { buildQuestionnaireResponse } from "../src/build/build.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 
 describe("enableWhen — equals operator", () => {
   const questionnaire: Questionnaire = {
@@ -34,7 +34,7 @@ describe("enableWhen — equals operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("pregnant")[0].enabled).toBe(false);
   });
 
@@ -48,7 +48,7 @@ describe("enableWhen — equals operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("pregnant")[0].enabled).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe("enableWhen — equals operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     const [gender] = rqr.getItems("gender");
     const [pregnant] = rqr.getItems("pregnant");
 
@@ -93,7 +93,7 @@ describe("enableWhen — exists operator", () => {
   };
 
   it("is disabled when referenced question has no answer", () => {
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire);
+    const rqr = buildQuestionnaireResponse(questionnaire);
     expect(rqr.getItems("confirm-email")[0].enabled).toBe(false);
   });
 
@@ -107,7 +107,7 @@ describe("enableWhen — exists operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("confirm-email")[0].enabled).toBe(true);
   });
 
@@ -129,7 +129,7 @@ describe("enableWhen — exists operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(q);
+    const rqr = buildQuestionnaireResponse(q);
     expect(rqr.getItems("fallback")[0].enabled).toBe(true);
 
     rqr.getItems("reason")[0].setAnswer([{ valueString: "something" }]);
@@ -165,7 +165,7 @@ describe("enableWhen — numeric operators", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("senior-details")[0].enabled).toBe(false);
   });
 
@@ -179,7 +179,7 @@ describe("enableWhen — numeric operators", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("senior-details")[0].enabled).toBe(true);
   });
 
@@ -193,7 +193,7 @@ describe("enableWhen — numeric operators", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("senior-details")[0].enabled).toBe(true);
   });
 });
@@ -226,7 +226,7 @@ describe("enableWhen — not-equals operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("editable-section")[0].enabled).toBe(true);
   });
 
@@ -240,7 +240,7 @@ describe("enableWhen — not-equals operator", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("editable-section")[0].enabled).toBe(false);
   });
 });
@@ -273,7 +273,7 @@ describe("enableWhen — boolean answer", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("allergy-details")[0].enabled).toBe(false);
   });
 
@@ -287,7 +287,7 @@ describe("enableWhen — boolean answer", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("allergy-details")[0].enabled).toBe(true);
   });
 });
@@ -324,7 +324,7 @@ describe("enableBehavior", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     // age passes but consent fails
     expect(rqr.getItems("details")[0].enabled).toBe(false);
 
@@ -363,7 +363,7 @@ describe("enableBehavior", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, bothFalse);
+    const rqr = buildQuestionnaireResponse(questionnaire, bothFalse);
     expect(rqr.getItems("income-section")[0].enabled).toBe(false);
 
     rqr.getItems("student")[0].setAnswer([{ valueBoolean: true }]);
@@ -400,7 +400,7 @@ describe("enableBehavior", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     // only one of two passes → "all" means disabled
     expect(rqr.getItems("target")[0].enabled).toBe(false);
   });
@@ -438,7 +438,7 @@ describe("enableWhen — quantity comparison", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire, response);
+    const rqr = buildQuestionnaireResponse(questionnaire, response);
     expect(rqr.getItems("overweight-advice")[0].enabled).toBe(false);
 
     rqr.getItems("weight")[0].setAnswer([{ valueQuantity: { value: 105, unit: "kg" } }]);
@@ -465,7 +465,7 @@ describe("enableWhen — no answer on referenced question", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(questionnaire);
+    const rqr = buildQuestionnaireResponse(questionnaire);
     expect(rqr.getItems("greeting")[0].enabled).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { AnswerValue } from "./types";
+import type { AnswerValue } from "./types.js";
 
 export default function compare(
   answer1: AnswerValue[],

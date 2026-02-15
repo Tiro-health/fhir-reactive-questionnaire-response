@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ReactiveQuestionnaireResponse } from "../src/ReactiveQuestionnaireResponse.js";
+import { buildQuestionnaireResponse } from "../src/build/build.js";
 import {
   bmiQuestionnaire,
   filledBmiResponse,
@@ -8,7 +8,7 @@ import {
 
 describe("BMI Calculator — full integration", () => {
   it("computes BMI from weight and height", () => {
-    const rqr = new ReactiveQuestionnaireResponse(
+    const rqr = buildQuestionnaireResponse(
       bmiQuestionnaire,
       filledBmiResponse,
     );
@@ -21,7 +21,7 @@ describe("BMI Calculator — full integration", () => {
   });
 
   it("derives BMI category from calculated BMI", () => {
-    const rqr = new ReactiveQuestionnaireResponse(
+    const rqr = buildQuestionnaireResponse(
       bmiQuestionnaire,
       filledBmiResponse,
     );
@@ -31,7 +31,7 @@ describe("BMI Calculator — full integration", () => {
   });
 
   it("changing weight updates BMI and category", () => {
-    const rqr = new ReactiveQuestionnaireResponse(
+    const rqr = buildQuestionnaireResponse(
       bmiQuestionnaire,
       filledBmiResponse,
     );
@@ -47,7 +47,7 @@ describe("BMI Calculator — full integration", () => {
   });
 
   it("changing height updates BMI", () => {
-    const rqr = new ReactiveQuestionnaireResponse(
+    const rqr = buildQuestionnaireResponse(
       bmiQuestionnaire,
       filledBmiResponse,
     );
@@ -67,7 +67,7 @@ describe("BMI Calculator — full integration", () => {
   });
 
   it("empty response produces no BMI", () => {
-    const rqr = new ReactiveQuestionnaireResponse(
+    const rqr = buildQuestionnaireResponse(
       bmiQuestionnaire,
       emptyBmiResponse,
     );
@@ -77,7 +77,7 @@ describe("BMI Calculator — full integration", () => {
   });
 
   it("toFhir() includes calculated answers", () => {
-    const rqr = new ReactiveQuestionnaireResponse(
+    const rqr = buildQuestionnaireResponse(
       bmiQuestionnaire,
       filledBmiResponse,
     );

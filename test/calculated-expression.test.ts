@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { ReactiveQuestionnaireResponse } from "../src/ReactiveQuestionnaireResponse.js";
-import { evaluateFhirPath } from "../src/fhirpath-context.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
+import { buildQuestionnaireResponse } from "../src/build/build.js";
+import { evaluateFhirPath } from "../src/build/fhirpath-context.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 
 describe("FHIRPath evaluation", () => {
   it("evaluates simple arithmetic", () => {
@@ -78,7 +78,7 @@ describe("Calculated expression via signals", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(calcQuestionnaire, response);
+    const rqr = buildQuestionnaireResponse(calcQuestionnaire, response);
     const [sumItem] = rqr.getItems("sum");
 
     expect(sumItem.answer).toEqual([{ valueDecimal: 30 }]);
@@ -95,7 +95,7 @@ describe("Calculated expression via signals", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(calcQuestionnaire, response);
+    const rqr = buildQuestionnaireResponse(calcQuestionnaire, response);
     const [a] = rqr.getItems("a");
     const [sumItem] = rqr.getItems("sum");
 
@@ -105,7 +105,7 @@ describe("Calculated expression via signals", () => {
   });
 
   it("calculated expression returns null for missing inputs", () => {
-    const rqr = new ReactiveQuestionnaireResponse(calcQuestionnaire);
+    const rqr = buildQuestionnaireResponse(calcQuestionnaire);
     const [sumItem] = rqr.getItems("sum");
 
     expect(sumItem.answer).toBeNull();
@@ -133,7 +133,7 @@ describe("Repeating items", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(repeatingQuestionnaire, response);
+    const rqr = buildQuestionnaireResponse(repeatingQuestionnaire, response);
 
     const phones = rqr.getItems("phone");
     expect(phones).toHaveLength(3);
@@ -152,7 +152,7 @@ describe("Repeating items", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(repeatingQuestionnaire, response);
+    const rqr = buildQuestionnaireResponse(repeatingQuestionnaire, response);
 
     expect(rqr.getItemById("phone-1")?.answer).toEqual([{ valueString: "111" }]);
     expect(rqr.getItemById("phone-2")?.answer).toEqual([{ valueString: "222" }]);
@@ -168,7 +168,7 @@ describe("Repeating items", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(repeatingQuestionnaire, response);
+    const rqr = buildQuestionnaireResponse(repeatingQuestionnaire, response);
     const fhir = rqr.toFhir();
 
     const phoneItems = fhir.item?.filter((i) => i.linkId === "phone") ?? [];
@@ -178,7 +178,7 @@ describe("Repeating items", () => {
   });
 
   it("creates one empty instance when no response items match", () => {
-    const rqr = new ReactiveQuestionnaireResponse(repeatingQuestionnaire);
+    const rqr = buildQuestionnaireResponse(repeatingQuestionnaire);
 
     const phones = rqr.getItems("phone");
     expect(phones).toHaveLength(1);

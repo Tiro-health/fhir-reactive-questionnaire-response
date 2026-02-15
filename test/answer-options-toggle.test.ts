@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { ReactiveQuestionnaireResponse } from "../src/ReactiveQuestionnaireResponse.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
-import { answerValuesMatch } from "../src/extensions.js";
+import { buildQuestionnaireResponse } from "../src/build/build.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
+import { answerValuesMatch } from "../src/build/extensions.js";
 
 const medicationQuestionnaire: Questionnaire = {
   resourceType: "Questionnaire",
@@ -84,7 +84,7 @@ function createModel(enableNsaids: boolean = false) {
       { linkId: "medication" },
     ],
   };
-  return new ReactiveQuestionnaireResponse(medicationQuestionnaire, response);
+  return buildQuestionnaireResponse(medicationQuestionnaire, response);
 }
 
 describe("answerOptions", () => {
@@ -267,7 +267,7 @@ describe("answerOptions with string values", () => {
       ],
     };
 
-    const rqr = new ReactiveQuestionnaireResponse(q, r);
+    const rqr = buildQuestionnaireResponse(q, r);
     const [color] = rqr.getItems("color");
 
     expect(color.answerOptions[0].enabled).toBe(false); // Red: toggled

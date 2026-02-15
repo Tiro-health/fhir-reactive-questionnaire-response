@@ -1,4 +1,4 @@
-import type { Questionnaire, QuestionnaireResponse } from "../src/types.js";
+import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 
 export { bmiQuestionnaire, emptyBmiResponse } from "../test/fixtures/bmi-questionnaire.js";
 

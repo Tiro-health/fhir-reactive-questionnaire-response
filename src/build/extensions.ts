@@ -1,4 +1,4 @@
-import type { AnswerValue, Extension } from "./types.js";
+import type { AnswerValue, Extension } from "../model/types.js";
 
 // SDC extension URLs
 export const CALCULATED_EXPRESSION =
@@ -110,4 +110,3 @@ export function answerValuesMatch(a: AnswerValue, b: AnswerValue): boolean {
     return a.valueUri === b.valueUri;
   return false;
 }
-
