@@ -43,6 +43,8 @@ export class ResponseItem {
     | Signal.Computed<AnswerValue[] | null>;
 
   #enabled: Signal.Computed<boolean>;
+  readonly #initialAnswers: AnswerValue[];
+  readonly #touched = new Signal.State(false);
 
   constructor(opts: ResponseItemInit) {
     this.id = opts.id;
@@ -56,6 +58,7 @@ export class ResponseItem {
     this.calculatedExpression = opts.calculatedExpression;
     this.enableWhenExpression = opts.enableWhenExpression;
     this.#enabled = opts.enabled;
+    this.#initialAnswers = opts.initialAnswers;
 
     this.#answer = opts.calculatedAnswer
       ? opts.calculatedAnswer
@@ -83,6 +86,18 @@ export class ResponseItem {
 
   get answer(): AnswerValue[] | null {
     return this.#answer.get();
+  }
+
+  get dirty(): boolean {
+    return !compare(this.answer ?? [], this.#initialAnswers);
+  }
+
+  get touched(): boolean {
+    return this.#touched.get();
+  }
+
+  markTouched(): void {
+    this.#touched.set(true);
   }
 
   setAnswer(value: AnswerValue[]): void {
