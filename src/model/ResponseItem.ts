@@ -100,6 +100,20 @@ export class ResponseItem {
     this.#touched.set(true);
   }
 
+  addAnswer(value: AnswerValue): void {
+    this.setAnswer([...(this.answer ?? []), value]);
+  }
+
+  removeAnswer(index: number): void {
+    const current = this.answer ?? [];
+    if (index < 0 || index >= current.length) {
+      throw new Error(
+        `Answer index ${index} out of range (0-${current.length - 1})`,
+      );
+    }
+    this.setAnswer(current.filter((_, i) => i !== index));
+  }
+
   setAnswer(value: AnswerValue[]): void {
     if (Signal.isState(this.#answer)) {
       (this.#answer as Signal.State<AnswerValue[] | null>).set(value);
