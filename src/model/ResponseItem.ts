@@ -20,6 +20,7 @@ export interface ResponseItemInit {
   items: ResponseItem[];
   answerOptions: AnswerOption[];
   parent: ResponseItem | QuestionnaireResponseModel;
+  root: QuestionnaireResponseModel;
   calculatedExpression: ParsedExpression | null;
   enableWhenExpression: ParsedExpression | null;
 }
@@ -29,11 +30,13 @@ export class ResponseItem {
   readonly linkId: string;
   readonly text: string;
   readonly type: QuestionnaireItemType;
-  readonly items: ResponseItem[];
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
   readonly enableWhenExpression: ParsedExpression | null;
   readonly parent: ResponseItem | QuestionnaireResponseModel;
+  readonly root: QuestionnaireResponseModel;
+
+  readonly #items: Signal.State<ResponseItem[]>;
 
   #answer:
     | Signal.State<AnswerValue[] | null>
@@ -46,9 +49,10 @@ export class ResponseItem {
     this.linkId = opts.linkId;
     this.text = opts.text;
     this.type = opts.type;
-    this.items = opts.items;
+    this.#items = new Signal.State(opts.items);
     this.answerOptions = opts.answerOptions;
     this.parent = opts.parent;
+    this.root = opts.root;
     this.calculatedExpression = opts.calculatedExpression;
     this.enableWhenExpression = opts.enableWhenExpression;
     this.#enabled = opts.enabled;
@@ -58,6 +62,15 @@ export class ResponseItem {
       : new Signal.State<AnswerValue[]>(opts.initialAnswers, {
           equals: compare,
         });
+  }
+
+  get items(): ResponseItem[] {
+    return this.#items.get();
+  }
+
+  /** @internal Provides direct access to the items signal for mutation methods. */
+  get _itemsSignal(): Signal.State<ResponseItem[]> {
+    return this.#items;
   }
 
   get item(): ResponseItem[] {

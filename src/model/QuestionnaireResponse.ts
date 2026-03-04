@@ -1,4 +1,9 @@
-import type { QuestionnaireResponse } from "./types.js";
+import { Signal } from "@lit-labs/signals";
+import type {
+  QuestionnaireItem,
+  QuestionnaireResponse,
+  QuestionnaireResponseItem,
+} from "./types.js";
 import type { ResponseItem } from "./ResponseItem.js";
 
 export class QuestionnaireResponseModel {
@@ -7,12 +12,32 @@ export class QuestionnaireResponseModel {
   readonly status: string;
   readonly questionnaire: string | undefined;
 
-  readonly items: ResponseItem[];
+  readonly #items: Signal.State<ResponseItem[]>;
   readonly itemsByLinkId: Map<string, ResponseItem[]>;
   readonly itemById: Map<string, ResponseItem>;
+  readonly definitions: Map<string, QuestionnaireItem>;
+
+  /** @internal Factory for creating new ResponseItems at runtime. Set during build. */
+  _buildItem:
+    | ((
+        definition: QuestionnaireItem,
+        responseItem: QuestionnaireResponseItem | undefined,
+        parent: ResponseItem | QuestionnaireResponseModel,
+        root: QuestionnaireResponseModel,
+      ) => ResponseItem)
+    | null = null;
+
+  get items(): ResponseItem[] {
+    return this.#items.get();
+  }
 
   get item(): ResponseItem[] {
     return this.items;
+  }
+
+  /** @internal Provides direct access to the items signal for mutation methods. */
+  get _itemsSignal(): Signal.State<ResponseItem[]> {
+    return this.#items;
   }
 
   constructor(opts: {
@@ -24,10 +49,11 @@ export class QuestionnaireResponseModel {
     this.id = opts.id;
     this.status = opts.status;
     this.questionnaire = opts.questionnaire;
-    this.items = opts.items;
+    this.#items = new Signal.State(opts.items);
 
     this.itemsByLinkId = new Map();
     this.itemById = new Map();
+    this.definitions = new Map();
   }
 
   getItems(linkId: string): ResponseItem[] {

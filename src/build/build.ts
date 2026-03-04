@@ -27,8 +27,11 @@ export function buildQuestionnaireResponse(
     id: response?.id,
     status: response?.status ?? "in-progress",
     questionnaire: response?.questionnaire ?? questionnaire.id,
-    items: [], // populated below via mutation
+    items: [], // populated below via signal set
   });
+
+  // Index all questionnaire item definitions by linkId
+  indexDefinitions(questionnaire.item ?? [], root.definitions);
 
   const items = hydrateChildren(
     questionnaire.item ?? [],
@@ -37,10 +40,25 @@ export function buildQuestionnaireResponse(
     root,
   );
 
-  // Populate root.items (readonly array assigned once during construction)
-  (root as { items: ResponseItem[] }).items = items;
+  // Populate root.items via signal
+  root._itemsSignal.set(items);
+
+  // Attach the buildItem factory for runtime instance creation
+  root._buildItem = buildItem;
 
   return root;
+}
+
+function indexDefinitions(
+  items: QuestionnaireItem[],
+  map: Map<string, QuestionnaireItem>,
+): void {
+  for (const item of items) {
+    map.set(item.linkId, item);
+    if (item.item) {
+      indexDefinitions(item.item, map);
+    }
+  }
 }
 
 function hydrateChildren(
@@ -77,7 +95,7 @@ function hydrateChildren(
   return result;
 }
 
-function buildItem(
+export function buildItem(
   definition: QuestionnaireItem,
   responseItem: QuestionnaireResponseItem | undefined,
   parent: ResponseItem | QuestionnaireResponseModel,
@@ -127,6 +145,7 @@ function buildItem(
     items: children,
     answerOptions,
     parent,
+    root,
     calculatedExpression,
     enableWhenExpression,
   });
