@@ -1,6 +1,7 @@
 // Model
 export { QuestionnaireResponseModel } from "./model/QuestionnaireResponse.js";
 export { ResponseItem } from "./model/ResponseItem.js";
+export { ResponseAnswer } from "./model/ResponseAnswer.js";
 export { AnswerOption, optionDisplay } from "./model/AnswerOption.js";
 export type * from "./model/types.js";
 

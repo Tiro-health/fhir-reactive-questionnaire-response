@@ -5,6 +5,7 @@ import type {
   QuestionnaireResponseItem,
 } from "./types.js";
 import type { ResponseItem } from "./ResponseItem.js";
+import { addItemTo, removeItemFrom, moveItemIn } from "./mutations.js";
 
 export class QuestionnaireResponseModel {
   readonly resourceType = "QuestionnaireResponse" as const;
@@ -76,6 +77,31 @@ export class QuestionnaireResponseModel {
     }
   }
 
+  /**
+   * Add a new instance of a repeating item at the root level.
+   * The item must have `repeats: true` in its questionnaire definition.
+   */
+  addItem(
+    linkId: string,
+    initial?: QuestionnaireResponseItem,
+  ): ResponseItem {
+    return addItemTo(this, this, linkId, initial);
+  }
+
+  /**
+   * Remove an item instance by its unique ID.
+   */
+  removeItem(itemId: string): void {
+    removeItemFrom(this, itemId);
+  }
+
+  /**
+   * Move an item instance within its sibling group (same linkId).
+   */
+  moveItem(linkId: string, fromIndex: number, toIndex: number): void {
+    moveItemIn(this, linkId, fromIndex, toIndex);
+  }
+
   toFhir(): QuestionnaireResponse {
     const result: QuestionnaireResponse = {
       resourceType: "QuestionnaireResponse",
@@ -96,6 +122,9 @@ export class QuestionnaireResponseModel {
       for (const item of items) {
         fn(item);
         walk(item.items);
+        for (const entry of item.answers) {
+          walk(entry.items);
+        }
       }
     };
     walk(this.items);

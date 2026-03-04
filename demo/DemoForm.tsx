@@ -3,9 +3,13 @@ import {
   buildQuestionnaireResponse,
   optionDisplay,
 } from "../src/index.js";
-import type { QuestionnaireResponseModel, ResponseItem, AnswerValue } from "../src/index.js";
+import type {
+  QuestionnaireResponseModel,
+  ResponseItem,
+  AnswerValue,
+} from "../src/index.js";
 import type { AnswerOption } from "../src/model/AnswerOption.js";
-import type { Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
+import type { QuestionnaireItemType, Questionnaire, QuestionnaireResponse } from "../src/model/types.js";
 import { useComputed } from "./useComputed.js";
 
 interface DemoFormProps {
@@ -24,16 +28,102 @@ export function DemoForm({ questionnaire, response }: DemoFormProps) {
   return (
     <div className="demo-form">
       <h2>{heading}</h2>
-      {model.items.map((item) => (
-        <ItemRenderer key={item.linkId} item={item} />
-      ))}
+      <ItemList items={model.items} model={model} />
       <h3>FHIR Output</h3>
       <FhirOutput model={model} />
     </div>
   );
 }
 
-function ItemRenderer({ item }: { item: ResponseItem }) {
+function ItemList({ items, model }: { items: ResponseItem[]; model: QuestionnaireResponseModel }) {
+  const allItems = useComputed(() => items);
+
+  const rendered: JSX.Element[] = [];
+  const seenRepeatingGroups = new Set<string>();
+
+  for (const item of allItems ?? []) {
+    const def = model.definitions.get(item.linkId);
+    const isRepeatingGroup = def?.type === "group" && def.repeats === true;
+
+    if (isRepeatingGroup) {
+      if (seenRepeatingGroups.has(item.linkId)) continue;
+      seenRepeatingGroups.add(item.linkId);
+      rendered.push(
+        <RepeatingGroupRenderer
+          key={`rg-${item.linkId}`}
+          linkId={item.linkId}
+          model={model}
+        />,
+      );
+    } else {
+      rendered.push(
+        <ItemRenderer key={item.id ?? item.linkId} item={item} model={model} />,
+      );
+    }
+  }
+
+  return <>{rendered}</>;
+}
+
+function RepeatingGroupRenderer({
+  linkId,
+  model,
+}: {
+  linkId: string;
+  model: QuestionnaireResponseModel;
+}) {
+  const instances = useComputed(() => model.getItems(linkId));
+  const def = model.definitions.get(linkId);
+  const label = def?.text ?? linkId;
+
+  return (
+    <div className="repeating-group">
+      <div className="repeating-group-header">
+        <h3>{label}</h3>
+        <button className="btn btn-add" onClick={() => model.addItem(linkId)}>
+          + Add {label}
+        </button>
+      </div>
+      {(instances ?? []).map((instance) => (
+        <GroupInstanceRenderer
+          key={instance.id ?? instance.linkId}
+          item={instance}
+          model={model}
+          onRemove={() => instance.id && model.removeItem(instance.id)}
+        />
+      ))}
+      {(instances ?? []).length === 0 && (
+        <p className="empty-hint">No entries yet.</p>
+      )}
+    </div>
+  );
+}
+
+function GroupInstanceRenderer({
+  item,
+  model,
+  onRemove,
+}: {
+  item: ResponseItem;
+  model: QuestionnaireResponseModel;
+  onRemove: () => void;
+}) {
+  const enabled = useComputed(() => item.enabled);
+
+  return (
+    <fieldset className={`item group-instance ${enabled ? "" : "disabled"}`}>
+      <div className="group-instance-header">
+        <legend>{item.text}</legend>
+        <button className="btn btn-remove" onClick={onRemove}>Remove</button>
+      </div>
+      {item.items.map((child) => (
+        <ItemRenderer key={child.id ?? child.linkId} item={child} model={model} />
+      ))}
+    </fieldset>
+  );
+}
+
+function ItemRenderer({ item, model }: { item: ResponseItem; model: QuestionnaireResponseModel }) {
   const enabled = useComputed(() => item.enabled);
 
   if (item.type === "group") {
@@ -41,7 +131,7 @@ function ItemRenderer({ item }: { item: ResponseItem }) {
       <fieldset className={`item ${enabled ? "" : "disabled"}`}>
         <legend>{item.text}</legend>
         {item.items.map((child) => (
-          <ItemRenderer key={child.linkId} item={child} />
+          <ItemRenderer key={child.id ?? child.linkId} item={child} model={model} />
         ))}
       </fieldset>
     );
@@ -55,120 +145,176 @@ function ItemRenderer({ item }: { item: ResponseItem }) {
     );
   }
 
+  if (item.hasAnswerItems) {
+    return (
+      <div className={`item ${enabled ? "" : "disabled"}`}>
+        <label>{item.text}</label>
+        <AnswerEntriesRenderer item={item} model={model} />
+      </div>
+    );
+  }
+
+  const isCalculated = item.calculatedExpression !== null;
+
   return (
     <div className={`item ${enabled ? "" : "disabled"}`}>
       <label>{item.text}</label>
-      <InputRenderer item={item} />
+      <ValueInput
+        type={item.type}
+        value={useComputed(() => item.answer)?.[0]}
+        answerOptions={item.answerOptions}
+        readOnly={isCalculated}
+        linkId={item.linkId}
+        onChange={(v) => item.setAnswer(v ? [v] : [])}
+      />
     </div>
   );
 }
 
-function InputRenderer({ item }: { item: ResponseItem }) {
-  const answers = useComputed(() => item.answer);
-  const isCalculated = item.calculatedExpression !== null;
+function AnswerEntriesRenderer({
+  item,
+  model,
+}: {
+  item: ResponseItem;
+  model: QuestionnaireResponseModel;
+}) {
+  const entries = useComputed(() => item.answers);
 
-  switch (item.type) {
-    case "boolean": {
-      const checked = answers?.[0]?.valueBoolean ?? false;
+  return (
+    <div className="answer-entries">
+      {(entries ?? []).map((entry, idx) => (
+        <div key={idx} className="answer-entry">
+          <div className="answer-entry-value">
+            <ValueInput
+              type={item.type}
+              value={useComputed(() => entry.value)}
+              answerOptions={item.answerOptions}
+              readOnly={false}
+              linkId={item.linkId}
+              onChange={(v) => { if (v) entry.setValue(v); }}
+            />
+            <button
+              className="btn btn-remove-sm"
+              onClick={() => item.removeAnswer(idx)}
+            >
+              x
+            </button>
+          </div>
+          <div className="answer-entry-children">
+            {entry.items.map((child) => (
+              <ItemRenderer key={child.id ?? child.linkId} item={child} model={model} />
+            ))}
+          </div>
+        </div>
+      ))}
+      <button
+        className="btn btn-add-sm"
+        onClick={() => item.addAnswer(emptyValue(item.type))}
+      >
+        + Add
+      </button>
+    </div>
+  );
+}
+
+interface ValueInputProps {
+  type: QuestionnaireItemType;
+  value: AnswerValue | undefined;
+  answerOptions: AnswerOption[];
+  readOnly: boolean;
+  linkId: string;
+  onChange: (value: AnswerValue | null) => void;
+}
+
+function ValueInput({ type, value, answerOptions, readOnly, linkId, onChange }: ValueInputProps) {
+  switch (type) {
+    case "boolean":
       return (
         <input
           type="checkbox"
-          checked={checked}
-          disabled={isCalculated}
-          onChange={(e) => {
-            item.setAnswer([{ valueBoolean: e.target.checked }]);
-          }}
+          checked={value?.valueBoolean ?? false}
+          disabled={readOnly}
+          onChange={(e) => onChange({ valueBoolean: e.target.checked })}
         />
       );
-    }
-    case "decimal": {
-      const val = answers?.[0]?.valueDecimal ?? "";
+    case "decimal":
       return (
         <input
           type="number"
           step="any"
-          value={String(val)}
-          readOnly={isCalculated}
+          value={String(value?.valueDecimal ?? "")}
+          readOnly={readOnly}
           onChange={(e) => {
             const n = parseFloat(e.target.value);
-            item.setAnswer(isNaN(n) ? [] : [{ valueDecimal: n }]);
+            onChange(isNaN(n) ? null : { valueDecimal: n });
           }}
         />
       );
-    }
-    case "integer": {
-      const val = answers?.[0]?.valueInteger ?? "";
+    case "integer":
       return (
         <input
           type="number"
           step="1"
-          value={String(val)}
-          readOnly={isCalculated}
+          value={String(value?.valueInteger ?? "")}
+          readOnly={readOnly}
           onChange={(e) => {
             const n = parseInt(e.target.value, 10);
-            item.setAnswer(isNaN(n) ? [] : [{ valueInteger: n }]);
+            onChange(isNaN(n) ? null : { valueInteger: n });
           }}
         />
       );
-    }
-    case "text": {
-      const val = answers?.[0]?.valueString ?? "";
+    case "text":
       return (
         <textarea
-          value={val}
-          readOnly={isCalculated}
-          onChange={(e) => {
-            item.setAnswer([{ valueString: e.target.value }]);
-          }}
+          value={value?.valueString ?? ""}
+          readOnly={readOnly}
+          onChange={(e) => onChange({ valueString: e.target.value })}
         />
       );
-    }
-    case "date": {
-      const val = answers?.[0]?.valueDate ?? "";
+    case "date":
       return (
         <input
           type="date"
-          value={val}
-          readOnly={isCalculated}
-          onChange={(e) => {
-            item.setAnswer([{ valueDate: e.target.value }]);
-          }}
+          value={value?.valueDate ?? ""}
+          readOnly={readOnly}
+          onChange={(e) => onChange({ valueDate: e.target.value })}
         />
       );
-    }
     case "choice":
-    case "open-choice": {
-      const selected = answers?.[0];
+    case "open-choice":
       return (
         <>
-          {item.answerOptions.map((opt) => (
+          {answerOptions.map((opt) => (
             <ChoiceOption
               key={optionDisplay(opt.value)}
               option={opt}
-              linkId={item.linkId}
-              selected={selected}
-              readOnly={isCalculated}
-              onSelect={() => {
-                item.setAnswer([{ ...opt.value }]);
-              }}
+              linkId={linkId}
+              selected={value}
+              readOnly={readOnly}
+              onSelect={() => onChange({ ...opt.value })}
             />
           ))}
         </>
       );
-    }
-    default: {
-      const val = answers?.[0]?.valueString ?? "";
+    default:
       return (
         <input
           type="text"
-          value={val}
-          readOnly={isCalculated}
-          onChange={(e) => {
-            item.setAnswer([{ valueString: e.target.value }]);
-          }}
+          value={value?.valueString ?? ""}
+          readOnly={readOnly}
+          onChange={(e) => onChange({ valueString: e.target.value })}
         />
       );
-    }
+  }
+}
+
+function emptyValue(type: QuestionnaireItemType): AnswerValue {
+  switch (type) {
+    case "boolean": return { valueBoolean: false };
+    case "decimal": return { valueDecimal: 0 };
+    case "integer": return { valueInteger: 0 };
+    case "date": return { valueDate: "" };
+    default: return { valueString: "" };
   }
 }
 

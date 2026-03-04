@@ -9,6 +9,7 @@ import type {
 } from "../model/types.js";
 import { QuestionnaireResponseModel } from "../model/QuestionnaireResponse.js";
 import { ResponseItem } from "../model/ResponseItem.js";
+import { ResponseAnswer } from "../model/ResponseAnswer.js";
 import { AnswerOption } from "../model/AnswerOption.js";
 import {
   getCalculatedExpression,
@@ -105,19 +106,43 @@ export function buildItem(
   const enableWhenExpression = getEnableWhenExpression(definition.extension);
   const type = definition.type;
 
-  const initialAnswers = responseItem?.answer
-    ? responseItem.answer.map(stripAnswerValue)
-    : [];
+  // Detect non-group items with child definitions → per-answer children
+  const hasAnswerItems =
+    type !== "group" &&
+    definition.item != null &&
+    definition.item.length > 0;
 
-  // Build children first (they need to exist before signals reference them)
-  const children = hydrateChildren(
-    definition.item ?? [],
-    responseItem?.item ?? [],
-    // We don't have `this` item yet — use a placeholder parent.
-    // Children only use parent for type info; we fix the reference below.
-    null as unknown as ResponseItem,
-    root,
-  );
+  let children: ResponseItem[] = [];
+  let answerEntries: ResponseAnswer[] | null = null;
+  let initialAnswers: AnswerValue[];
+
+  if (hasAnswerItems) {
+    // Build per-answer children from answer[].item[]
+    const responseAnswers = responseItem?.answer ?? [];
+    answerEntries = responseAnswers.map((ans) => {
+      const value = stripAnswerValue(ans);
+      const entryChildren = hydrateChildren(
+        definition.item!,
+        ans.item ?? [],
+        null as unknown as ResponseItem,
+        root,
+      );
+      return new ResponseAnswer(value, entryChildren);
+    });
+    initialAnswers = responseAnswers.map(stripAnswerValue);
+  } else {
+    initialAnswers = responseItem?.answer
+      ? responseItem.answer.map(stripAnswerValue)
+      : [];
+
+    // Build children at the item level (groups and items without answer nesting)
+    children = hydrateChildren(
+      definition.item ?? [],
+      responseItem?.item ?? [],
+      null as unknown as ResponseItem,
+      root,
+    );
+  }
 
   // Wire calculated answer signal
   const calculatedAnswer = calculatedExpression
@@ -148,11 +173,21 @@ export function buildItem(
     root,
     calculatedExpression,
     enableWhenExpression,
+    answerEntries,
   });
 
-  // Fix parent reference for children
+  // Fix parent reference for item-level children
   for (const child of children) {
     (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent = item;
+  }
+
+  // Fix parent reference for answer entry children
+  if (answerEntries) {
+    for (const entry of answerEntries) {
+      for (const child of entry.items) {
+        (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent = item;
+      }
+    }
   }
 
   return item;

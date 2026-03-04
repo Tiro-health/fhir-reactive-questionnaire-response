@@ -131,3 +131,102 @@ export const emptyMedicationResponse: QuestionnaireResponse = {
     { linkId: "medication" },
   ],
 };
+
+export const patientIntakeQuestionnaire: Questionnaire = {
+  resourceType: "Questionnaire",
+  id: "patient-intake",
+  status: "active",
+  title: "Patient Intake",
+  item: [
+    {
+      linkId: "patient-name",
+      text: "Patient name",
+      type: "string",
+    },
+    {
+      linkId: "phone",
+      text: "Phone number",
+      type: "string",
+      repeats: true,
+      item: [
+        {
+          linkId: "phone-type",
+          text: "Type",
+          type: "choice",
+          answerOption: [
+            { valueCoding: { code: "home", display: "Home" } },
+            { valueCoding: { code: "work", display: "Work" } },
+            { valueCoding: { code: "mobile", display: "Mobile" } },
+          ],
+        },
+      ],
+    },
+    {
+      linkId: "med-group",
+      text: "Medication",
+      type: "group",
+      repeats: true,
+      item: [
+        {
+          linkId: "med-name",
+          text: "Medication name",
+          type: "string",
+        },
+        {
+          linkId: "dosage",
+          text: "Dosage",
+          type: "string",
+        },
+        {
+          linkId: "prescribed",
+          text: "Taking as prescribed?",
+          type: "boolean",
+        },
+        {
+          linkId: "side-effects",
+          text: "Describe side effects",
+          type: "string",
+          enableWhen: [
+            { question: "prescribed", operator: "=", answerBoolean: true },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+export const prefilledIntakeResponse: QuestionnaireResponse = {
+  resourceType: "QuestionnaireResponse",
+  status: "in-progress",
+  questionnaire: "patient-intake",
+  item: [
+    { linkId: "patient-name", answer: [{ valueString: "Jane Doe" }] },
+    {
+      linkId: "phone",
+      answer: [
+        {
+          valueString: "+1 555-0100",
+          item: [
+            { linkId: "phone-type", answer: [{ valueCoding: { code: "home", display: "Home" } }] },
+          ],
+        },
+        {
+          valueString: "+1 555-0200",
+          item: [
+            { linkId: "phone-type", answer: [{ valueCoding: { code: "work", display: "Work" } }] },
+          ],
+        },
+      ],
+    },
+    {
+      linkId: "med-group",
+      id: "med-1",
+      item: [
+        { linkId: "med-name", answer: [{ valueString: "Aspirin" }] },
+        { linkId: "dosage", answer: [{ valueString: "100mg daily" }] },
+        { linkId: "prescribed", answer: [{ valueBoolean: true }] },
+        { linkId: "side-effects" },
+      ],
+    },
+  ],
+};

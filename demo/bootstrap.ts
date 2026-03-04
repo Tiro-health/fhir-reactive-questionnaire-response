@@ -10,11 +10,14 @@ import {
   emptyAllergyResponse,
   medicationQuestionnaire,
   emptyMedicationResponse,
+  patientIntakeQuestionnaire,
+  prefilledIntakeResponse,
 } from "./questionnaires.js";
 import "./styles.css";
 
 // --- Lit ---
 const litApp = document.getElementById("lit-app")!;
+litApp.appendChild(createForm(patientIntakeQuestionnaire, prefilledIntakeResponse));
 litApp.appendChild(createForm(bmiQuestionnaire, emptyBmiResponse));
 litApp.appendChild(createForm(allergyQuestionnaire, emptyAllergyResponse));
 litApp.appendChild(createForm(medicationQuestionnaire, emptyMedicationResponse));
@@ -24,6 +27,7 @@ function App() {
   return createElement(
     "div",
     { className: "grid" },
+    createElement(DemoForm, { questionnaire: patientIntakeQuestionnaire, response: prefilledIntakeResponse }),
     createElement(DemoForm, { questionnaire: bmiQuestionnaire, response: emptyBmiResponse }),
     createElement(DemoForm, { questionnaire: allergyQuestionnaire, response: emptyAllergyResponse }),
     createElement(DemoForm, { questionnaire: medicationQuestionnaire, response: emptyMedicationResponse }),
