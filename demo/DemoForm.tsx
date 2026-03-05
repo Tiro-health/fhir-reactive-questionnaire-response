@@ -161,7 +161,7 @@ function ItemRenderer({ item, model }: { item: ResponseItem; model: Questionnair
       <label>{item.text}</label>
       <ValueInput
         type={item.type}
-        value={useComputed(() => item.answer)?.[0]}
+        value={useComputed(() => item.answerValues)?.[0]}
         answerOptions={item.answerOptions}
         readOnly={isCalculated}
         linkId={item.linkId}
@@ -178,7 +178,7 @@ function AnswerEntriesRenderer({
   item: ResponseItem;
   model: QuestionnaireResponseModel;
 }) {
-  const entries = useComputed(() => item.answers);
+  const entries = useComputed(() => item.answerEntries);
 
   return (
     <div className="answer-entries">

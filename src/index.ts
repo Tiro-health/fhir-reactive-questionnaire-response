@@ -1,6 +1,9 @@
 // Model
 export { QuestionnaireResponseModel } from "./model/QuestionnaireResponse.js";
-export { ResponseItem } from "./model/ResponseItem.js";
+export type { ResponseItem } from "./model/ResponseItem.js";
+export { BaseResponseItem } from "./model/BaseResponseItem.js";
+export { FlatResponseItem } from "./model/FlatResponseItem.js";
+export { AnswerEntryResponseItem } from "./model/AnswerEntryResponseItem.js";
 export { ResponseAnswer } from "./model/ResponseAnswer.js";
 export { AnswerOption, optionDisplay } from "./model/AnswerOption.js";
 export type * from "./model/types.js";
@@ -21,5 +24,5 @@ export {
 
 // Backwards-compatible aliases
 export { QuestionnaireResponseModel as ReactiveQuestionnaireResponse } from "./model/QuestionnaireResponse.js";
-export { ResponseItem as ReactiveResponseItem } from "./model/ResponseItem.js";
+export type { ResponseItem as ReactiveResponseItem } from "./model/ResponseItem.js";
 export { AnswerOption as ReactiveAnswerOption } from "./model/AnswerOption.js";

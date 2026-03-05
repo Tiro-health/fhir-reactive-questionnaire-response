@@ -15,7 +15,7 @@ describe("BMI Calculator — full integration", () => {
     const [bmi] = rqr.getItems("bmi");
 
     // BMI = 80 / (1.80)^2 ≈ 24.69
-    const bmiVal = bmi.answer;
+    const bmiVal = bmi.answerValues;
     expect(bmiVal).not.toBeNull();
     expect(bmiVal![0].valueDecimal).toBeCloseTo(24.69, 1);
   });
@@ -27,7 +27,7 @@ describe("BMI Calculator — full integration", () => {
     );
     const [category] = rqr.getItems("bmi-category");
 
-    expect(category.answer).toEqual([{ valueString: "Normal" }]);
+    expect(category.answerValues).toEqual([{ valueString: "Normal" }]);
   });
 
   it("changing weight updates BMI and category", () => {
@@ -42,8 +42,8 @@ describe("BMI Calculator — full integration", () => {
     weight.setAnswer([{ valueDecimal: 100 }]);
 
     // BMI = 100 / (1.80)^2 ≈ 30.86
-    expect(bmi.answer![0].valueDecimal).toBeCloseTo(30.86, 1);
-    expect(category.answer![0]).toEqual({ valueString: "Obese" });
+    expect(bmi.answerValues![0].valueDecimal).toBeCloseTo(30.86, 1);
+    expect(category.answerValues![0]).toEqual({ valueString: "Obese" });
   });
 
   it("changing height updates BMI", () => {
@@ -60,8 +60,8 @@ describe("BMI Calculator — full integration", () => {
     height.setAnswer([{ valueDecimal: 200 }]);
 
     // BMI = 100 / (2.00)^2 = 25
-    expect(bmi.answer![0].valueDecimal).toBe(25);
-    expect(category.answer![0]).toEqual({
+    expect(bmi.answerValues![0].valueDecimal).toBe(25);
+    expect(category.answerValues![0]).toEqual({
       valueString: "Overweight",
     });
   });
@@ -73,7 +73,7 @@ describe("BMI Calculator — full integration", () => {
     );
     const [bmi] = rqr.getItems("bmi");
 
-    expect(bmi.answer).toBeNull();
+    expect(bmi.answerValues).toBeNull();
   });
 
   it("toFhir() includes calculated answers", () => {

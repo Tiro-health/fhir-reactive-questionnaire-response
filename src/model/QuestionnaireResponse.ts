@@ -122,7 +122,7 @@ export class QuestionnaireResponseModel {
       for (const item of items) {
         fn(item);
         walk(item.items);
-        for (const entry of item.answers) {
+        for (const entry of item.answerEntries) {
           walk(entry.items);
         }
       }

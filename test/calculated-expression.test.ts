@@ -81,7 +81,7 @@ describe("Calculated expression via signals", () => {
     const rqr = buildQuestionnaireResponse(calcQuestionnaire, response);
     const [sumItem] = rqr.getItems("sum");
 
-    expect(sumItem.answer).toEqual([{ valueDecimal: 30 }]);
+    expect(sumItem.answerValues).toEqual([{ valueDecimal: 30 }]);
   });
 
   it("calculated expression updates when inputs change", () => {
@@ -101,14 +101,14 @@ describe("Calculated expression via signals", () => {
 
     a.setAnswer([{ valueDecimal: 50 }]);
 
-    expect(sumItem.answer).toEqual([{ valueDecimal: 70 }]);
+    expect(sumItem.answerValues).toEqual([{ valueDecimal: 70 }]);
   });
 
   it("calculated expression returns null for missing inputs", () => {
     const rqr = buildQuestionnaireResponse(calcQuestionnaire);
     const [sumItem] = rqr.getItems("sum");
 
-    expect(sumItem.answer).toBeNull();
+    expect(sumItem.answerValues).toBeNull();
   });
 });
 
@@ -137,9 +137,9 @@ describe("Repeating items", () => {
 
     const phones = rqr.getItems("phone");
     expect(phones).toHaveLength(3);
-    expect(phones[0].answer).toEqual([{ valueString: "111" }]);
-    expect(phones[1].answer).toEqual([{ valueString: "222" }]);
-    expect(phones[2].answer).toEqual([{ valueString: "333" }]);
+    expect(phones[0].answerValues).toEqual([{ valueString: "111" }]);
+    expect(phones[1].answerValues).toEqual([{ valueString: "222" }]);
+    expect(phones[2].answerValues).toEqual([{ valueString: "333" }]);
   });
 
   it("preserves item ids", () => {
@@ -154,8 +154,8 @@ describe("Repeating items", () => {
 
     const rqr = buildQuestionnaireResponse(repeatingQuestionnaire, response);
 
-    expect(rqr.getItemById("phone-1")?.answer).toEqual([{ valueString: "111" }]);
-    expect(rqr.getItemById("phone-2")?.answer).toEqual([{ valueString: "222" }]);
+    expect(rqr.getItemById("phone-1")?.answerValues).toEqual([{ valueString: "111" }]);
+    expect(rqr.getItemById("phone-2")?.answerValues).toEqual([{ valueString: "222" }]);
   });
 
   it("toFhir() serializes all repeating instances", () => {
@@ -182,6 +182,6 @@ describe("Repeating items", () => {
 
     const phones = rqr.getItems("phone");
     expect(phones).toHaveLength(1);
-    expect(phones[0].answer).toEqual([]);
+    expect(phones[0].answerValues).toEqual([]);
   });
 });

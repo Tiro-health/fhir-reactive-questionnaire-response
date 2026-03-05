@@ -8,7 +8,9 @@ import type {
   QuestionnaireResponseItem,
 } from "../model/types.js";
 import { QuestionnaireResponseModel } from "../model/QuestionnaireResponse.js";
-import { ResponseItem } from "../model/ResponseItem.js";
+import type { ResponseItem } from "../model/ResponseItem.js";
+import { FlatResponseItem } from "../model/FlatResponseItem.js";
+import { AnswerEntryResponseItem } from "../model/AnswerEntryResponseItem.js";
 import { ResponseAnswer } from "../model/ResponseAnswer.js";
 import { AnswerOption } from "../model/AnswerOption.js";
 import {
@@ -96,6 +98,13 @@ function hydrateChildren(
   return result;
 }
 
+/**
+ * Build a single reactive ResponseItem from a questionnaire definition and
+ * optional pre-existing response data. Wires up signals for calculated
+ * expressions, enableWhen logic, and answer option toggles. Returns a
+ * FlatResponseItem for groups/simple items, or an AnswerEntryResponseItem
+ * for non-group items with child definitions (the FHIR answer[].item[] pattern).
+ */
 export function buildItem(
   definition: QuestionnaireItem,
   responseItem: QuestionnaireResponseItem | undefined,
@@ -108,9 +117,7 @@ export function buildItem(
 
   // Detect non-group items with child definitions → per-answer children
   const hasAnswerItems =
-    type !== "group" &&
-    definition.item != null &&
-    definition.item.length > 0;
+    type !== "group" && definition.item != null && definition.item.length > 0;
 
   let children: ResponseItem[] = [];
   let answerEntries: ResponseAnswer[] | null = null;
@@ -159,33 +166,36 @@ export function buildItem(
   // Build answer options with toggle signals
   const answerOptions = buildAnswerOptions(definition, root);
 
-  const item = new ResponseItem({
+  const shared = {
     linkId: definition.linkId,
     text: definition.text ?? "",
     type,
     id: responseItem?.id,
     initialAnswers,
     enabled,
-    calculatedAnswer,
     items: children,
     answerOptions,
     parent,
     root,
     calculatedExpression,
     enableWhenExpression,
-    answerEntries,
-  });
+  };
+
+  const item: ResponseItem = hasAnswerItems
+    ? new AnswerEntryResponseItem({ ...shared, answerEntries: answerEntries! })
+    : new FlatResponseItem({ ...shared, calculatedAnswer });
 
   // Fix parent reference for item-level children
   for (const child of children) {
-    (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent = item;
+    (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent =
+      item;
   }
 
   // Fix parent reference for answer entry children
   if (answerEntries) {
     for (const entry of answerEntries) {
       for (const child of entry.items) {
-        (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent = item;
+        child.parent = item;
       }
     }
   }
@@ -213,7 +223,7 @@ function buildEnabledSignal(
       return evaluateEnableWhen(conditions, behavior, (linkId) => {
         const items = root.getItems(linkId);
         if (items.length === 0) return null;
-        return items[0].answer;
+        return items[0].answerValues;
       });
     });
   }
@@ -225,9 +235,12 @@ function buildAnswerOptions(
   definition: QuestionnaireItem,
   root: QuestionnaireResponseModel,
 ): AnswerOption[] {
-  if (!definition.answerOption || definition.answerOption.length === 0) return [];
+  if (!definition.answerOption || definition.answerOption.length === 0)
+    return [];
 
-  const toggleExpressions = getAnswerOptionsToggleExpressions(definition.extension);
+  const toggleExpressions = getAnswerOptionsToggleExpressions(
+    definition.extension,
+  );
 
   const toggleSignals = toggleExpressions.map(
     (toggle) =>

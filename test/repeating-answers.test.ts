@@ -58,7 +58,7 @@ describe("addAnswer", () => {
 
     phone.addAnswer({ valueString: "333" });
 
-    expect(phone.answer).toEqual([
+    expect(phone.answerValues).toEqual([
       { valueString: "111" },
       { valueString: "222" },
       { valueString: "333" },
@@ -71,7 +71,7 @@ describe("addAnswer", () => {
 
     phone.addAnswer({ valueString: "111" });
 
-    expect(phone.answer).toEqual([{ valueString: "111" }]);
+    expect(phone.answerValues).toEqual([{ valueString: "111" }]);
   });
 });
 
@@ -97,7 +97,7 @@ describe("removeAnswer", () => {
 
     phone.removeAnswer(1);
 
-    expect(phone.answer).toEqual([
+    expect(phone.answerValues).toEqual([
       { valueString: "111" },
       { valueString: "333" },
     ]);
@@ -207,11 +207,11 @@ describe("no-op on calculated items", () => {
 
     const rqr = buildQuestionnaireResponse(calcQuestionnaire, response);
     const [sum] = rqr.getItems("sum");
-    const before = sum.answer;
+    const before = sum.answerValues;
 
     sum.addAnswer({ valueDecimal: 999 });
 
-    expect(sum.answer).toEqual(before);
+    expect(sum.answerValues).toEqual(before);
   });
 
   it("removeAnswer is a no-op on calculated items", () => {
@@ -226,14 +226,14 @@ describe("no-op on calculated items", () => {
 
     const rqr = buildQuestionnaireResponse(calcQuestionnaire, response);
     const [sum] = rqr.getItems("sum");
-    const before = sum.answer;
+    const before = sum.answerValues;
 
     // removeAnswer on a calculated item: setAnswer is a no-op,
     // but the index check still runs against the current computed value.
     // If computed answer has a value, index 0 is valid but set is ignored.
     if (before && before.length > 0) {
       sum.removeAnswer(0);
-      expect(sum.answer).toEqual(before);
+      expect(sum.answerValues).toEqual(before);
     }
   });
 });

@@ -201,14 +201,14 @@ class DemoForm extends SignalWatcher(LitElement) {
     return html`
       <div class="item ${item.enabled ? "" : "disabled"}">
         <label>${item.text}</label>
-        ${this.renderValueInput(item.type, item.answer?.[0], item.answerOptions, isCalculated, item.linkId,
+        ${this.renderValueInput(item.type, item.answerValues?.[0], item.answerOptions, isCalculated, item.linkId,
           (v) => item.setAnswer(v ? [v] : []))}
       </div>
     `;
   }
 
   private renderAnswerEntries(item: ResponseItem): unknown {
-    const entries = item.answers;
+    const entries = item.answerEntries;
 
     return html`
       <div class="answer-entries">

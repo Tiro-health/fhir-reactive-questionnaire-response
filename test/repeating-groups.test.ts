@@ -136,8 +136,8 @@ describe("Repeating Groups", () => {
       expect(newGroup.items.length).toBe(2);
       expect(newGroup.items[0].linkId).toBe("med-name");
       expect(newGroup.items[1].linkId).toBe("dosage");
-      expect(newGroup.items[0].answer).toEqual([]);
-      expect(newGroup.items[1].answer).toEqual([]);
+      expect(newGroup.items[0].answerValues).toEqual([]);
+      expect(newGroup.items[1].answerValues).toEqual([]);
     });
 
     it("creates a group instance with initial child answers", () => {
@@ -151,8 +151,8 @@ describe("Repeating Groups", () => {
         ],
       });
 
-      expect(newGroup.items[0].answer).toEqual([{ valueString: "Paracetamol" }]);
-      expect(newGroup.items[1].answer).toEqual([{ valueString: "500mg" }]);
+      expect(newGroup.items[0].answerValues).toEqual([{ valueString: "Paracetamol" }]);
+      expect(newGroup.items[1].answerValues).toEqual([{ valueString: "500mg" }]);
     });
 
     it("generates unique IDs for each new instance", () => {
@@ -474,8 +474,8 @@ describe("Repeating Groups", () => {
 
       const groups = model.getItems("med-group");
       expect(groups.length).toBe(2);
-      expect(groups[0].items[0].answer).toEqual([{ valueString: "Aspirin" }]);
-      expect(groups[1].items[0].answer).toEqual([{ valueString: "Ibuprofen" }]);
+      expect(groups[0].items[0].answerValues).toEqual([{ valueString: "Aspirin" }]);
+      expect(groups[1].items[0].answerValues).toEqual([{ valueString: "Ibuprofen" }]);
     });
   });
 
