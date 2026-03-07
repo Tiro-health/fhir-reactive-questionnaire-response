@@ -8,6 +8,15 @@ export { ResponseAnswer } from "./model/ResponseAnswer.js";
 export { AnswerOption, optionDisplay } from "./model/AnswerOption.js";
 export type * from "./model/types.js";
 
+// Merge
+export {
+  mergeResponse,
+  overwrite,
+  keepExisting,
+  append,
+  type MergeStrategy,
+} from "./model/merge.js";
+
 // Build
 export { buildQuestionnaireResponse } from "./build/build.js";
 export { evaluateFhirPath } from "./build/fhirpath-context.js";

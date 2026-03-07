@@ -6,6 +6,7 @@ import type {
 } from "./types.js";
 import type { ResponseItem } from "./ResponseItem.js";
 import { addItemTo, removeItemFrom, moveItemIn } from "./mutations.js";
+import { mergeResponse, type MergeStrategy } from "./merge.js";
 
 export class QuestionnaireResponseModel {
   readonly resourceType = "QuestionnaireResponse" as const;
@@ -115,6 +116,14 @@ export class QuestionnaireResponseModel {
     if (items.length > 0) result.item = items;
 
     return result;
+  }
+
+  /**
+   * Merge a partial QuestionnaireResponse into this model.
+   * Delegates to `mergeResponse()`.
+   */
+  merge(partial: QuestionnaireResponse, strategy?: MergeStrategy): void {
+    mergeResponse(this, partial, strategy);
   }
 
   forEachItem(fn: (item: ResponseItem) => void): void {
