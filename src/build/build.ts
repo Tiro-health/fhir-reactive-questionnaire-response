@@ -160,8 +160,12 @@ export function buildItem(
       })
     : null;
 
-  // Wire enabled signal
-  const enabled = buildEnabledSignal(definition, enableWhenExpression, root);
+  // Mutable ref: the enabled signal reads item.parent at evaluation time
+  // (after parent fixup), not the possibly-null `parent` parameter.
+  const itemRef: { current: ResponseItem | null } = { current: null };
+
+  // Wire enabled signal (lazy — reads itemRef.current.parent when evaluated)
+  const enabled = buildEnabledSignal(definition, enableWhenExpression, itemRef, root);
 
   // Build answer options with toggle signals
   const answerOptions = buildAnswerOptions(definition, root);
@@ -185,6 +189,9 @@ export function buildItem(
     ? new AnswerEntryResponseItem({ ...shared, answerEntries: answerEntries! })
     : new FlatResponseItem({ ...shared, calculatedAnswer });
 
+  // Set the ref so the enabled signal can find the item's parent
+  itemRef.current = item;
+
   // Fix parent reference for item-level children
   for (const child of children) {
     (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent =
@@ -203,9 +210,31 @@ export function buildItem(
   return item;
 }
 
+function findNearestItem(
+  linkId: string,
+  itemRef: { current: ResponseItem | null },
+  root: QuestionnaireResponseModel,
+): ResponseItem | null {
+  // Ancestor axis: walk up from item's parent, check each level's direct children
+  if (itemRef.current) {
+    let cursor: ResponseItem | QuestionnaireResponseModel =
+      itemRef.current.parent;
+    while (true) {
+      const found = cursor.items.find((i) => i.linkId === linkId);
+      if (found) return found;
+      if (cursor === root) break;
+      cursor = (cursor as ResponseItem).parent;
+    }
+  }
+  // Fallback: first registered instance (cross-group / top-level references)
+  const all = root.getItems(linkId);
+  return all.length > 0 ? all[0] : null;
+}
+
 function buildEnabledSignal(
   definition: QuestionnaireItem,
   enableWhenExpr: { expression: string } | null,
+  itemRef: { current: ResponseItem | null },
   root: QuestionnaireResponseModel,
 ): Signal.Computed<boolean> {
   if (enableWhenExpr) {
@@ -221,9 +250,9 @@ function buildEnabledSignal(
     const behavior = definition.enableBehavior ?? "all";
     return new Signal.Computed<boolean>(() => {
       return evaluateEnableWhen(conditions, behavior, (linkId) => {
-        const items = root.getItems(linkId);
-        if (items.length === 0) return null;
-        return items[0].answerValues;
+        const item = findNearestItem(linkId, itemRef, root);
+        if (!item) return null;
+        return item.answerValues;
       });
     });
   }
