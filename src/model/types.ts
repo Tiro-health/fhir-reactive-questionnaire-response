@@ -62,6 +62,19 @@ export interface AnswerValue {
   valueUri?: string;
 }
 
+export const ANSWER_VALUE_KEYS = [
+  "valueBoolean",
+  "valueDecimal",
+  "valueInteger",
+  "valueString",
+  "valueCoding",
+  "valueQuantity",
+  "valueDate",
+  "valueDateTime",
+  "valueTime",
+  "valueUri",
+] as const satisfies readonly (keyof AnswerValue)[];
+
 export type EnableWhenOperator =
   | "exists"
   | "="

@@ -1,4 +1,4 @@
-import type { AnswerValue, Extension } from "../model/types.js";
+import { ANSWER_VALUE_KEYS, type AnswerValue, type Extension } from "../model/types.js";
 
 // SDC extension URLs
 export const CALCULATED_EXPRESSION =
@@ -92,21 +92,9 @@ export function answerValuesMatch(a: AnswerValue, b: AnswerValue): boolean {
       a.valueCoding.system === b.valueCoding.system
     );
   }
-  if (a.valueString !== undefined && b.valueString !== undefined)
-    return a.valueString === b.valueString;
-  if (a.valueInteger !== undefined && b.valueInteger !== undefined)
-    return a.valueInteger === b.valueInteger;
-  if (a.valueDecimal !== undefined && b.valueDecimal !== undefined)
-    return a.valueDecimal === b.valueDecimal;
-  if (a.valueBoolean !== undefined && b.valueBoolean !== undefined)
-    return a.valueBoolean === b.valueBoolean;
-  if (a.valueDate !== undefined && b.valueDate !== undefined)
-    return a.valueDate === b.valueDate;
-  if (a.valueDateTime !== undefined && b.valueDateTime !== undefined)
-    return a.valueDateTime === b.valueDateTime;
-  if (a.valueTime !== undefined && b.valueTime !== undefined)
-    return a.valueTime === b.valueTime;
-  if (a.valueUri !== undefined && b.valueUri !== undefined)
-    return a.valueUri === b.valueUri;
+  for (const key of ANSWER_VALUE_KEYS) {
+    if (key === "valueCoding" || key === "valueQuantity") continue;
+    if (a[key] !== undefined && b[key] !== undefined) return a[key] === b[key];
+  }
   return false;
 }
