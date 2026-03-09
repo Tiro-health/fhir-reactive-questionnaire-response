@@ -215,10 +215,23 @@ function findNearestItem(
   itemRef: { current: ResponseItem | null },
   root: QuestionnaireResponseModel,
 ): ResponseItem | null {
-  // Ancestor axis: walk up from item's parent, check each level's direct children
   if (itemRef.current) {
-    let cursor: ResponseItem | QuestionnaireResponseModel =
-      itemRef.current.parent;
+    const parent = itemRef.current.parent;
+
+    // Answer-entry siblings: if nested under answer[].item[], check
+    // the same answer entry's items before walking the ancestor axis.
+    if ("answerEntries" in parent && (parent as ResponseItem).hasAnswerItems) {
+      for (const entry of (parent as ResponseItem).answerEntries) {
+        if (entry.items.includes(itemRef.current)) {
+          const found = entry.items.find((i) => i.linkId === linkId);
+          if (found) return found;
+          break;
+        }
+      }
+    }
+
+    // Ancestor axis: walk up from item's parent, check each level's direct children
+    let cursor: ResponseItem | QuestionnaireResponseModel = parent;
     while (true) {
       const found = cursor.items.find((i) => i.linkId === linkId);
       if (found) return found;
