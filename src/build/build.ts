@@ -8,7 +8,7 @@ import type {
   QuestionnaireResponseItem,
 } from "../model/types.js";
 import { QuestionnaireResponseModel } from "../model/QuestionnaireResponse.js";
-import type { ResponseItem } from "../model/ResponseItem.js";
+import type { ResponseItem, ResponseNode } from "../model/ResponseItem.js";
 import { FlatResponseItem } from "../model/FlatResponseItem.js";
 import { AnswerEntryResponseItem } from "../model/AnswerEntryResponseItem.js";
 import { ResponseAnswer } from "../model/ResponseAnswer.js";
@@ -67,7 +67,7 @@ function indexDefinitions(
 function hydrateChildren(
   definitions: QuestionnaireItem[],
   responseItems: QuestionnaireResponseItem[],
-  parent: ResponseItem | QuestionnaireResponseModel,
+  parent: ResponseNode,
   root: QuestionnaireResponseModel,
 ): ResponseItem[] {
   const result: ResponseItem[] = [];
@@ -108,7 +108,7 @@ function hydrateChildren(
 export function buildItem(
   definition: QuestionnaireItem,
   responseItem: QuestionnaireResponseItem | undefined,
-  parent: ResponseItem | QuestionnaireResponseModel,
+  parent: ResponseNode,
   root: QuestionnaireResponseModel,
 ): ResponseItem {
   const calculatedExpression = getCalculatedExpression(definition.extension);
@@ -194,8 +194,7 @@ export function buildItem(
 
   // Fix parent reference for item-level children
   for (const child of children) {
-    (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent =
-      item;
+    (child as { parent: ResponseNode }).parent = item;
   }
 
   // Fix parent reference for answer entry children
@@ -220,8 +219,8 @@ function findNearestItem(
 
     // Answer-entry siblings: if nested under answer[].item[], check
     // the same answer entry's items before walking the ancestor axis.
-    if ("answerEntries" in parent && (parent as ResponseItem).hasAnswerItems) {
-      for (const entry of (parent as ResponseItem).answerEntries) {
+    if (parent.hasAnswerItems) {
+      for (const entry of parent.answerEntries) {
         if (entry.items.includes(itemRef.current)) {
           const found = entry.items.find((i) => i.linkId === linkId);
           if (found) return found;
@@ -231,12 +230,11 @@ function findNearestItem(
     }
 
     // Ancestor axis: walk up from item's parent, check each level's direct children
-    let cursor: ResponseItem | QuestionnaireResponseModel = parent;
-    while (true) {
+    let cursor: ResponseNode | null = parent;
+    while (cursor) {
       const found = cursor.items.find((i) => i.linkId === linkId);
       if (found) return found;
-      if (cursor === root) break;
-      cursor = (cursor as ResponseItem).parent;
+      cursor = cursor.parent;
     }
   }
   // Fallback: first registered instance (cross-group / top-level references)

@@ -7,7 +7,7 @@ import type {
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
 import type { ParsedExpression } from "../build/extensions.js";
-import type { ResponseItem } from "./ResponseItem.js";
+import type { ResponseItem, ResponseNode } from "./ResponseItem.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 import compare from "./compare.js";
 import {
@@ -25,7 +25,7 @@ export interface BaseResponseItemInit {
   enabled: Signal.Computed<boolean>;
   items: ResponseItem[];
   answerOptions: AnswerOption[];
-  parent: ResponseItem | QuestionnaireResponseModel;
+  parent: ResponseNode;
   root: QuestionnaireResponseModel;
   calculatedExpression: ParsedExpression | null;
   enableWhenExpression: ParsedExpression | null;
@@ -39,7 +39,7 @@ export abstract class BaseResponseItem implements ResponseItem {
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
   readonly enableWhenExpression: ParsedExpression | null;
-  readonly parent: ResponseItem | QuestionnaireResponseModel;
+  readonly parent: ResponseNode;
   readonly root: QuestionnaireResponseModel;
 
   readonly #items: Signal.State<ResponseItem[]>;
