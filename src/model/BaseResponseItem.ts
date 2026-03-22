@@ -7,7 +7,7 @@ import type {
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
 import type { ParsedExpression } from "../build/extensions.js";
-import type { ResponseItem, ResponseNode } from "./ResponseItem.js";
+import type { EnabledResolver, ResponseItem, ResponseNode } from "./ResponseItem.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 import compare from "./compare.js";
 import {
@@ -22,13 +22,12 @@ export interface BaseResponseItemInit {
   type: QuestionnaireItemType;
   id?: string;
   initialAnswers: AnswerValue[];
-  enabled: Signal.Computed<boolean>;
+  enabledResolver: EnabledResolver;
   items: ResponseItem[];
   answerOptions: AnswerOption[];
   parent: ResponseNode;
   root: QuestionnaireResponseModel;
   calculatedExpression: ParsedExpression | null;
-  enableWhenExpression: ParsedExpression | null;
 }
 
 export abstract class BaseResponseItem implements ResponseItem {
@@ -38,7 +37,6 @@ export abstract class BaseResponseItem implements ResponseItem {
   readonly type: QuestionnaireItemType;
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
-  readonly enableWhenExpression: ParsedExpression | null;
   readonly parent: ResponseNode;
   readonly root: QuestionnaireResponseModel;
 
@@ -57,8 +55,7 @@ export abstract class BaseResponseItem implements ResponseItem {
     this.parent = opts.parent;
     this.root = opts.root;
     this.calculatedExpression = opts.calculatedExpression;
-    this.enableWhenExpression = opts.enableWhenExpression;
-    this.#enabled = opts.enabled;
+    this.#enabled = new Signal.Computed(() => opts.enabledResolver(this));
     this.initialAnswers = opts.initialAnswers;
   }
 
@@ -85,6 +82,34 @@ export abstract class BaseResponseItem implements ResponseItem {
 
   get touched(): boolean {
     return this.#touched.get();
+  }
+
+  findNearestItem(linkId: string): ResponseItem | null {
+    const parent = this.parent;
+
+    // Answer-entry siblings: if nested under answer[].item[], check
+    // the same answer entry's items before walking the ancestor axis.
+    if (parent.hasAnswerItems) {
+      for (const entry of parent.answerEntries) {
+        if (entry.items.includes(this as ResponseItem)) {
+          const found = entry.items.find((i) => i.linkId === linkId);
+          if (found) return found;
+          break;
+        }
+      }
+    }
+
+    // Ancestor axis: walk up from item's parent, check each level's direct children
+    let cursor: ResponseNode | null = parent;
+    while (cursor) {
+      const found = cursor.items.find((i) => i.linkId === linkId);
+      if (found) return found;
+      cursor = cursor.parent;
+    }
+
+    // Fallback: first registered instance (cross-group / top-level references)
+    const all = this.root.getItems(linkId);
+    return all.length > 0 ? all[0] : null;
   }
 
   markTouched(): void {

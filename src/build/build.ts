@@ -8,7 +8,11 @@ import type {
   QuestionnaireResponseItem,
 } from "../model/types.js";
 import { QuestionnaireResponseModel } from "../model/QuestionnaireResponse.js";
-import type { ResponseItem, ResponseNode } from "../model/ResponseItem.js";
+import type {
+  EnabledResolver,
+  ResponseItem,
+  ResponseNode,
+} from "../model/ResponseItem.js";
 import { FlatResponseItem } from "../model/FlatResponseItem.js";
 import { AnswerEntryResponseItem } from "../model/AnswerEntryResponseItem.js";
 import { ResponseAnswer } from "../model/ResponseAnswer.js";
@@ -160,12 +164,7 @@ export function buildItem(
       })
     : null;
 
-  // Mutable ref: the enabled signal reads item.parent at evaluation time
-  // (after parent fixup), not the possibly-null `parent` parameter.
-  const itemRef: { current: ResponseItem | null } = { current: null };
-
-  // Wire enabled signal (lazy — reads itemRef.current.parent when evaluated)
-  const enabled = buildEnabledSignal(definition, enableWhenExpression, itemRef, root);
+  const enabledResolver = buildEnabledResolver(definition, enableWhenExpression, root);
 
   // Build answer options with toggle signals
   const answerOptions = buildAnswerOptions(definition, root);
@@ -176,21 +175,17 @@ export function buildItem(
     type,
     id: responseItem?.id,
     initialAnswers,
-    enabled,
+    enabledResolver,
     items: children,
     answerOptions,
     parent,
     root,
     calculatedExpression,
-    enableWhenExpression,
   };
 
   const item: ResponseItem = hasAnswerItems
     ? new AnswerEntryResponseItem({ ...shared, answerEntries: answerEntries! })
     : new FlatResponseItem({ ...shared, calculatedAnswer });
-
-  // Set the ref so the enabled signal can find the item's parent
-  itemRef.current = item;
 
   // Fix parent reference for item-level children
   for (const child of children) {
@@ -209,66 +204,32 @@ export function buildItem(
   return item;
 }
 
-function findNearestItem(
-  linkId: string,
-  itemRef: { current: ResponseItem | null },
-  root: QuestionnaireResponseModel,
-): ResponseItem | null {
-  if (itemRef.current) {
-    const parent = itemRef.current.parent;
-
-    // Answer-entry siblings: if nested under answer[].item[], check
-    // the same answer entry's items before walking the ancestor axis.
-    if (parent.hasAnswerItems) {
-      for (const entry of parent.answerEntries) {
-        if (entry.items.includes(itemRef.current)) {
-          const found = entry.items.find((i) => i.linkId === linkId);
-          if (found) return found;
-          break;
-        }
-      }
-    }
-
-    // Ancestor axis: walk up from item's parent, check each level's direct children
-    let cursor: ResponseNode | null = parent;
-    while (cursor) {
-      const found = cursor.items.find((i) => i.linkId === linkId);
-      if (found) return found;
-      cursor = cursor.parent;
-    }
-  }
-  // Fallback: first registered instance (cross-group / top-level references)
-  const all = root.getItems(linkId);
-  return all.length > 0 ? all[0] : null;
-}
-
-function buildEnabledSignal(
+function buildEnabledResolver(
   definition: QuestionnaireItem,
   enableWhenExpr: { expression: string } | null,
-  itemRef: { current: ResponseItem | null },
   root: QuestionnaireResponseModel,
-): Signal.Computed<boolean> {
+): EnabledResolver {
   if (enableWhenExpr) {
     const expression = enableWhenExpr.expression;
-    return new Signal.Computed<boolean>(() => {
+    return () => {
       const results = evaluateFhirPath(expression, root);
       return results.length > 0 && results[0] === true;
-    });
+    };
   }
 
   if (definition.enableWhen && definition.enableWhen.length > 0) {
     const conditions = definition.enableWhen;
     const behavior = definition.enableBehavior ?? "all";
-    return new Signal.Computed<boolean>(() => {
+    return (item) => {
       return evaluateEnableWhen(conditions, behavior, (linkId) => {
-        const item = findNearestItem(linkId, itemRef, root);
-        if (!item) return null;
-        return item.answerValues;
+        const resolved = item.findNearestItem(linkId);
+        if (!resolved) return null;
+        return resolved.answerValues;
       });
-    });
+    };
   }
 
-  return new Signal.Computed<boolean>(() => true);
+  return () => true;
 }
 
 function buildAnswerOptions(
