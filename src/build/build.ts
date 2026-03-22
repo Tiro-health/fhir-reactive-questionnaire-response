@@ -8,7 +8,11 @@ import type {
   QuestionnaireResponseItem,
 } from "../model/types.js";
 import { QuestionnaireResponseModel } from "../model/QuestionnaireResponse.js";
-import type { ResponseItem } from "../model/ResponseItem.js";
+import type {
+  EnabledResolver,
+  ResponseItem,
+  ResponseNode,
+} from "../model/ResponseItem.js";
 import { FlatResponseItem } from "../model/FlatResponseItem.js";
 import { AnswerEntryResponseItem } from "../model/AnswerEntryResponseItem.js";
 import { ResponseAnswer } from "../model/ResponseAnswer.js";
@@ -67,7 +71,7 @@ function indexDefinitions(
 function hydrateChildren(
   definitions: QuestionnaireItem[],
   responseItems: QuestionnaireResponseItem[],
-  parent: ResponseItem | QuestionnaireResponseModel,
+  parent: ResponseNode,
   root: QuestionnaireResponseModel,
 ): ResponseItem[] {
   const result: ResponseItem[] = [];
@@ -108,7 +112,7 @@ function hydrateChildren(
 export function buildItem(
   definition: QuestionnaireItem,
   responseItem: QuestionnaireResponseItem | undefined,
-  parent: ResponseItem | QuestionnaireResponseModel,
+  parent: ResponseNode,
   root: QuestionnaireResponseModel,
 ): ResponseItem {
   const calculatedExpression = getCalculatedExpression(definition.extension);
@@ -160,8 +164,7 @@ export function buildItem(
       })
     : null;
 
-  // Wire enabled signal
-  const enabled = buildEnabledSignal(definition, enableWhenExpression, root);
+  const enabledResolver = buildEnabledResolver(definition, enableWhenExpression, root);
 
   // Build answer options with toggle signals
   const answerOptions = buildAnswerOptions(definition, root);
@@ -172,13 +175,12 @@ export function buildItem(
     type,
     id: responseItem?.id,
     initialAnswers,
-    enabled,
+    enabledResolver,
     items: children,
     answerOptions,
     parent,
     root,
     calculatedExpression,
-    enableWhenExpression,
   };
 
   const item: ResponseItem = hasAnswerItems
@@ -187,8 +189,7 @@ export function buildItem(
 
   // Fix parent reference for item-level children
   for (const child of children) {
-    (child as { parent: ResponseItem | QuestionnaireResponseModel }).parent =
-      item;
+    (child as { parent: ResponseNode }).parent = item;
   }
 
   // Fix parent reference for answer entry children
@@ -203,32 +204,32 @@ export function buildItem(
   return item;
 }
 
-function buildEnabledSignal(
+function buildEnabledResolver(
   definition: QuestionnaireItem,
   enableWhenExpr: { expression: string } | null,
   root: QuestionnaireResponseModel,
-): Signal.Computed<boolean> {
+): EnabledResolver {
   if (enableWhenExpr) {
     const expression = enableWhenExpr.expression;
-    return new Signal.Computed<boolean>(() => {
+    return () => {
       const results = evaluateFhirPath(expression, root);
       return results.length > 0 && results[0] === true;
-    });
+    };
   }
 
   if (definition.enableWhen && definition.enableWhen.length > 0) {
     const conditions = definition.enableWhen;
     const behavior = definition.enableBehavior ?? "all";
-    return new Signal.Computed<boolean>(() => {
+    return (item) => {
       return evaluateEnableWhen(conditions, behavior, (linkId) => {
-        const items = root.getItems(linkId);
-        if (items.length === 0) return null;
-        return items[0].answerValues;
+        const resolved = item.findNearestItem(linkId);
+        if (!resolved) return null;
+        return resolved.answerValues;
       });
-    });
+    };
   }
 
-  return new Signal.Computed<boolean>(() => true);
+  return () => true;
 }
 
 function buildAnswerOptions(

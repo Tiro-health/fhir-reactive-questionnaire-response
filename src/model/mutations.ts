@@ -1,14 +1,12 @@
 import type { QuestionnaireResponseItem } from "./types.js";
-import type { ResponseItem } from "./ResponseItem.js";
+import type { ResponseItem, ResponseNode } from "./ResponseItem.js";
 import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
-
-type ItemParent = ResponseItem | QuestionnaireResponseModel;
 
 /**
  * Add a new instance of a repeating item as a child of `parent`.
  */
 export function addItemTo(
-  parent: ItemParent,
+  parent: ResponseNode,
   root: QuestionnaireResponseModel,
   linkId: string,
   initial?: QuestionnaireResponseItem,
@@ -78,7 +76,7 @@ export function removeItemFrom(
  * fromIndex/toIndex are relative to the matching linkId items within the parent.
  */
 export function moveItemIn(
-  parent: ItemParent,
+  parent: ResponseNode,
   linkId: string,
   fromIndex: number,
   toIndex: number,
@@ -125,7 +123,7 @@ export function moveItemIn(
   parent._itemsSignal.set(currentItems);
 
   // Also update the itemsByLinkId index order
-  const root = "resourceType" in parent ? parent : (parent as ResponseItem).root;
+  const root = "resourceType" in parent ? (parent as QuestionnaireResponseModel) : (parent as ResponseItem).root;
   const indexList = root.itemsByLinkId.get(linkId);
   if (indexList) {
     const idxInList = indexList.indexOf(moved);

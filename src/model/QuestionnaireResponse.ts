@@ -4,10 +4,11 @@ import type {
   QuestionnaireResponse,
   QuestionnaireResponseItem,
 } from "./types.js";
-import type { ResponseItem } from "./ResponseItem.js";
+import type { ResponseItem, ResponseNode } from "./ResponseItem.js";
+import type { ResponseAnswer } from "./ResponseAnswer.js";
 import { addItemTo, removeItemFrom, moveItemIn } from "./mutations.js";
 
-export class QuestionnaireResponseModel {
+export class QuestionnaireResponseModel implements ResponseNode {
   readonly resourceType = "QuestionnaireResponse" as const;
   readonly id: string | undefined;
   readonly status: string;
@@ -18,12 +19,17 @@ export class QuestionnaireResponseModel {
   readonly itemById: Map<string, ResponseItem>;
   readonly definitions: Map<string, QuestionnaireItem>;
 
+  // ResponseNode dummies — root has no parent and no answer entries
+  readonly parent = null;
+  readonly hasAnswerItems = false;
+  readonly answerEntries: ResponseAnswer[] = [];
+
   /** @internal Factory for creating new ResponseItems at runtime. Set during build. */
   _buildItem:
     | ((
         definition: QuestionnaireItem,
         responseItem: QuestionnaireResponseItem | undefined,
-        parent: ResponseItem | QuestionnaireResponseModel,
+        parent: ResponseNode,
         root: QuestionnaireResponseModel,
       ) => ResponseItem)
     | null = null;

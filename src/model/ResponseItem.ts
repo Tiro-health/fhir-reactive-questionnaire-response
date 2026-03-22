@@ -9,15 +9,28 @@ import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
 import type { ParsedExpression } from "../build/extensions.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 
-export interface ResponseItem {
+export type EnabledResolver = (item: ResponseItem) => boolean;
+
+/**
+ * Common tree-node interface shared by ResponseItem and QuestionnaireResponseModel.
+ * Enables tree traversal (e.g. enableWhen ancestor walk) without type casts.
+ */
+export interface ResponseNode {
+  readonly items: ResponseItem[];
+  readonly _itemsSignal: Signal.State<ResponseItem[]>;
+  parent: ResponseNode | null;
+  readonly hasAnswerItems: boolean;
+  readonly answerEntries: ResponseAnswer[];
+}
+
+export interface ResponseItem extends ResponseNode {
   readonly id: string | undefined;
   readonly linkId: string;
   readonly text: string;
   readonly type: QuestionnaireItemType;
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
-  readonly enableWhenExpression: ParsedExpression | null;
-  parent: ResponseItem | QuestionnaireResponseModel;
+  parent: ResponseNode;
   readonly root: QuestionnaireResponseModel;
 
   readonly items: ResponseItem[];
@@ -34,6 +47,7 @@ export interface ResponseItem {
   /** @internal Provides direct access to the items signal for mutation methods. */
   readonly _itemsSignal: Signal.State<ResponseItem[]>;
 
+  findNearestItem(linkId: string): ResponseItem | null;
   markTouched(): void;
   setAnswer(value: AnswerValue[]): void;
   addAnswer(value: AnswerValue): void;
