@@ -42,6 +42,100 @@ const questionnaire: Questionnaire = {
   ],
 };
 
+/**
+ * Questionnaire where a repeating group's enableWhen references a
+ * top-level item that lives *outside* the group.
+ *
+ *   global-toggle (boolean)
+ *   med-group (group, repeats)
+ *     dosage (string, enableWhen: global-toggle = true)
+ */
+const crossGroupQuestionnaire: Questionnaire = {
+  resourceType: "Questionnaire",
+  id: "cross-group-test",
+  status: "active",
+  item: [
+    { linkId: "global-toggle", text: "Enable all dosages?", type: "boolean" },
+    {
+      linkId: "med-group",
+      text: "Medication",
+      type: "group",
+      repeats: true,
+      item: [
+        {
+          linkId: "dosage",
+          text: "Dosage",
+          type: "string",
+          enableWhen: [
+            {
+              question: "global-toggle",
+              operator: "=",
+              answerBoolean: true,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+describe("enableWhen — cross-group references to top-level items", () => {
+  it("enableWhen inside a repeating group resolves a top-level linkId via fallback", () => {
+    const response: QuestionnaireResponse = {
+      resourceType: "QuestionnaireResponse",
+      status: "in-progress",
+      item: [
+        { linkId: "global-toggle", answer: [{ valueBoolean: false }] },
+        {
+          linkId: "med-group",
+          item: [{ linkId: "dosage" }],
+        },
+        {
+          linkId: "med-group",
+          item: [{ linkId: "dosage" }],
+        },
+      ],
+    };
+
+    const rqr = buildQuestionnaireResponse(crossGroupQuestionnaire, response);
+    const dosageItems = rqr.getItems("dosage");
+
+    // Both disabled because global-toggle is false
+    expect(dosageItems[0].enabled).toBe(false);
+    expect(dosageItems[1].enabled).toBe(false);
+  });
+
+  it("flipping the top-level toggle enables all group instances", () => {
+    const response: QuestionnaireResponse = {
+      resourceType: "QuestionnaireResponse",
+      status: "in-progress",
+      item: [
+        { linkId: "global-toggle", answer: [{ valueBoolean: false }] },
+        {
+          linkId: "med-group",
+          item: [{ linkId: "dosage" }],
+        },
+        {
+          linkId: "med-group",
+          item: [{ linkId: "dosage" }],
+        },
+      ],
+    };
+
+    const rqr = buildQuestionnaireResponse(crossGroupQuestionnaire, response);
+    const dosageItems = rqr.getItems("dosage");
+    const toggle = rqr.getItems("global-toggle")[0];
+
+    expect(dosageItems[0].enabled).toBe(false);
+    expect(dosageItems[1].enabled).toBe(false);
+
+    toggle.setAnswer([{ valueBoolean: true }]);
+
+    expect(dosageItems[0].enabled).toBe(true);
+    expect(dosageItems[1].enabled).toBe(true);
+  });
+});
+
 describe("enableWhen — scoped resolution within repeating groups", () => {
   it("each instance resolves enableWhen to its own sibling", () => {
     const response: QuestionnaireResponse = {
