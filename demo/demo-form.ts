@@ -277,8 +277,7 @@ class DemoForm extends SignalWatcher(LitElement) {
         return html`<input type="date" .value=${val} ?readonly=${readonly}
           @input=${(e: Event) => onChange({ valueDate: (e.target as HTMLInputElement).value })} />`;
       }
-      case "choice":
-      case "open-choice": {
+      case "coding": {
         return html`
           ${answerOptions.map((opt) => {
             const label = optionDisplay(opt.value);

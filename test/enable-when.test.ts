@@ -8,7 +8,7 @@ describe("enableWhen — equals operator", () => {
     id: "eq-test",
     status: "active",
     item: [
-      { linkId: "gender", text: "Gender", type: "choice" },
+      { linkId: "gender", text: "Gender", type: "coding" },
       {
         linkId: "pregnant",
         text: "Are you pregnant?",

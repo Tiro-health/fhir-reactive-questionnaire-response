@@ -16,7 +16,7 @@ const medicationQuestionnaire: Questionnaire = {
     {
       linkId: "medication",
       text: "Select medication",
-      type: "choice",
+      type: "coding",
       answerOption: [
         {
           valueCoding: {
@@ -232,7 +232,7 @@ describe("answerOptions with string values", () => {
         {
           linkId: "color",
           text: "Favorite color",
-          type: "choice",
+          type: "coding",
           answerOption: [
             { valueString: "Red" },
             { valueString: "Blue" },

@@ -280,8 +280,7 @@ function ValueInput({ type, value, answerOptions, readOnly, linkId, onChange }: 
           onChange={(e) => onChange({ valueDate: e.target.value })}
         />
       );
-    case "choice":
-    case "open-choice":
+    case "coding":
       return (
         <>
           {answerOptions.map((opt) => (

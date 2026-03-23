@@ -11,7 +11,7 @@ const questionnaire: Questionnaire = {
     {
       linkId: "condition-type",
       text: "Type of condition",
-      type: "choice",
+      type: "coding",
       enableWhen: [
         { question: "has-condition", operator: "=", answerBoolean: true },
       ],

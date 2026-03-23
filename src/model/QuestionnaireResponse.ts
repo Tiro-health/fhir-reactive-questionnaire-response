@@ -12,7 +12,7 @@ export class QuestionnaireResponseModel implements ResponseNode {
   readonly resourceType = "QuestionnaireResponse" as const;
   readonly id: string | undefined;
   readonly status: string;
-  readonly questionnaire: string | undefined;
+  readonly questionnaire: string;
 
   readonly #items: Signal.State<ResponseItem[]>;
   readonly itemsByLinkId: Map<string, ResponseItem[]>;
@@ -55,7 +55,7 @@ export class QuestionnaireResponseModel implements ResponseNode {
   }) {
     this.id = opts.id;
     this.status = opts.status;
-    this.questionnaire = opts.questionnaire;
+    this.questionnaire = opts.questionnaire ?? "";
     this.#items = new Signal.State(opts.items);
 
     this.itemsByLinkId = new Map();
@@ -112,10 +112,10 @@ export class QuestionnaireResponseModel implements ResponseNode {
     const result: QuestionnaireResponse = {
       resourceType: "QuestionnaireResponse",
       status: this.status,
+      questionnaire: this.questionnaire,
     };
 
     if (this.id) result.id = this.id;
-    if (this.questionnaire) result.questionnaire = this.questionnaire;
 
     const items = this.items.map((item) => item.toFhir());
     if (items.length > 0) result.item = items;
