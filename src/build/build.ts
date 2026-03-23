@@ -37,7 +37,7 @@ export function buildQuestionnaireResponse(
   const root = new QuestionnaireResponseModel({
     id: response?.id,
     status: response?.status ?? "in-progress",
-    questionnaire: response?.questionnaire ?? questionnaire.id,
+    questionnaire: response?.questionnaire ?? questionnaire.id ?? "",
     items: [], // populated below via signal set
   });
 

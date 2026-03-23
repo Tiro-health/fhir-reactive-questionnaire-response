@@ -1,4 +1,4 @@
-// Minimal FHIR R4 type subsets for Questionnaire + QuestionnaireResponse
+// Minimal FHIR R5 type subsets for Questionnaire + QuestionnaireResponse
 
 export type QuestionnaireItemType =
   | "group"
@@ -12,8 +12,7 @@ export type QuestionnaireItemType =
   | "string"
   | "text"
   | "url"
-  | "choice"
-  | "open-choice"
+  | "coding"
   | "attachment"
   | "reference"
   | "quantity";
@@ -107,6 +106,8 @@ export interface QuestionnaireItem {
   required?: boolean;
   readOnly?: boolean;
   repeats?: boolean;
+  answerConstraint?: "optionsOnly" | "optionsOrType" | "optionsOrString";
+  disabledDisplay?: "hidden" | "protected";
   enableWhen?: EnableWhen[];
   enableBehavior?: EnableBehavior;
   answerOption?: AnswerOption[];
@@ -138,6 +139,6 @@ export interface QuestionnaireResponse {
   resourceType: "QuestionnaireResponse";
   id?: string;
   status: string;
-  questionnaire?: string;
+  questionnaire: string;
   item?: QuestionnaireResponseItem[];
 }

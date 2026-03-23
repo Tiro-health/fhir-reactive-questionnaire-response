@@ -63,7 +63,7 @@ export const medicationQuestionnaire: Questionnaire = {
     {
       linkId: "medication",
       text: "Select medication",
-      type: "choice",
+      type: "coding",
       answerOption: [
         {
           valueCoding: {
@@ -152,7 +152,7 @@ export const patientIntakeQuestionnaire: Questionnaire = {
         {
           linkId: "phone-type",
           text: "Type",
-          type: "choice",
+          type: "coding",
           answerOption: [
             { valueCoding: { code: "home", display: "Home" } },
             { valueCoding: { code: "work", display: "Work" } },

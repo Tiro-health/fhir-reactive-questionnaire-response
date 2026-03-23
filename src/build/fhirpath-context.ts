@@ -1,5 +1,5 @@
 import fhirpath from "fhirpath";
-import r4model from "fhirpath/fhir-context/r4";
+import r5model from "fhirpath/fhir-context/r5";
 
 export function evaluateFhirPath(
   expression: string,
@@ -9,6 +9,6 @@ export function evaluateFhirPath(
     resource,
     expression,
     { resource },
-    r4model,
+    r5model,
   ) as unknown[];
 }
