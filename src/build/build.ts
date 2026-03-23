@@ -1,11 +1,12 @@
 import { Signal } from "@lit-labs/signals";
-import type {
-  AnswerValue,
-  Questionnaire,
-  QuestionnaireItem,
-  QuestionnaireItemType,
-  QuestionnaireResponse,
-  QuestionnaireResponseItem,
+import {
+  ANSWER_VALUE_KEYS,
+  type AnswerValue,
+  type Questionnaire,
+  type QuestionnaireItem,
+  type QuestionnaireItemType,
+  type QuestionnaireResponse,
+  type QuestionnaireResponseItem,
 } from "../model/types.js";
 import { QuestionnaireResponseModel } from "../model/QuestionnaireResponse.js";
 import type {
@@ -25,6 +26,9 @@ import {
 } from "./extensions.js";
 import { evaluateFhirPath } from "./fhirpath-context.js";
 import { evaluateEnableWhen } from "./enable-when.js";
+
+/** Shared signal for items that are unconditionally enabled. */
+const ALWAYS_TRUE = new Signal.Computed<boolean>(() => true);
 
 export function buildQuestionnaireResponse(
   questionnaire: Questionnaire,
@@ -109,7 +113,7 @@ function hydrateChildren(
  * FlatResponseItem for groups/simple items, or an AnswerEntryResponseItem
  * for non-group items with child definitions (the FHIR answer[].item[] pattern).
  */
-export function buildItem(
+function buildItem(
   definition: QuestionnaireItem,
   responseItem: QuestionnaireResponseItem | undefined,
   parent: ResponseNode,
@@ -135,7 +139,7 @@ export function buildItem(
       const entryChildren = hydrateChildren(
         definition.item!,
         ans.item ?? [],
-        null as unknown as ResponseItem,
+        null as unknown as ResponseNode,
         root,
       );
       return new ResponseAnswer(value, entryChildren);
@@ -251,7 +255,7 @@ function buildAnswerOptions(
       }),
   );
 
-  const alwaysEnabled = new Signal.Computed<boolean>(() => true);
+  const alwaysEnabled = ALWAYS_TRUE;
 
   return definition.answerOption.map((opt) => {
     const value: AnswerValue = { ...opt };
@@ -272,21 +276,11 @@ function buildAnswerOptions(
 
 function stripAnswerValue(answer: AnswerValue): AnswerValue {
   const result: AnswerValue = {};
-  if (answer.valueBoolean !== undefined)
-    result.valueBoolean = answer.valueBoolean;
-  if (answer.valueDecimal !== undefined)
-    result.valueDecimal = answer.valueDecimal;
-  if (answer.valueInteger !== undefined)
-    result.valueInteger = answer.valueInteger;
-  if (answer.valueString !== undefined) result.valueString = answer.valueString;
-  if (answer.valueCoding !== undefined) result.valueCoding = answer.valueCoding;
-  if (answer.valueQuantity !== undefined)
-    result.valueQuantity = answer.valueQuantity;
-  if (answer.valueDate !== undefined) result.valueDate = answer.valueDate;
-  if (answer.valueDateTime !== undefined)
-    result.valueDateTime = answer.valueDateTime;
-  if (answer.valueTime !== undefined) result.valueTime = answer.valueTime;
-  if (answer.valueUri !== undefined) result.valueUri = answer.valueUri;
+  for (const key of ANSWER_VALUE_KEYS) {
+    if (answer[key] !== undefined) {
+      (result as Record<string, unknown>)[key] = answer[key];
+    }
+  }
   return result;
 }
 

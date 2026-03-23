@@ -63,6 +63,9 @@ export function removeItemFrom(
   }
 
   const parent = item.parent;
+  if (!parent) {
+    throw new Error(`Item "${itemId}" has no parent and cannot be removed.`);
+  }
 
   // Remove from parent's items signal
   parent._itemsSignal.set(parent.items.filter((i) => i !== item));
