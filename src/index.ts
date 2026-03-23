@@ -22,6 +22,9 @@ export {
   answerValuesMatch,
 } from "./build/extensions.js";
 
+// History
+export { FormHistory, type HistoryOptions } from "./history.js";
+
 // R4 compatibility
 export { fromR4Questionnaire, fromR4QuestionnaireResponse } from "./r4/from-r4.js";
 export { toR4Questionnaire, toR4QuestionnaireResponse } from "./r4/to-r4.js";
