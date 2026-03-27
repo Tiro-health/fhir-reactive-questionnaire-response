@@ -46,6 +46,10 @@ export interface ResponseItem extends ResponseNode {
   readonly answerEntries: ResponseAnswer[];
   readonly hasAnswerItems: boolean;
   readonly enabled: boolean;
+  readonly visible: boolean;
+  readonly visibleItems: ResponseItem[];
+  readonly hasVisibleItems: boolean;
+  readonly enabledAnswerOptions: AnswerOption[];
   readonly dirty: boolean;
   readonly touched: boolean;
 
