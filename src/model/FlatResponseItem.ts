@@ -1,9 +1,9 @@
 import { Signal } from "@lit-labs/signals";
 import type {
   AnswerValue,
-  QuestionnaireResponseAnswer,
   QuestionnaireResponseItem,
 } from "./types.js";
+import type { ToFhirOptions } from "./QuestionnaireResponse.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 import { BaseResponseItem, type BaseResponseItemInit } from "./BaseResponseItem.js";
 import compare from "./compare.js";
@@ -43,6 +43,7 @@ export class FlatResponseItem extends BaseResponseItem {
   }
 
   setAnswer(value: AnswerValue[]): void {
+    if (this.readOnly) return;
     if (Signal.isState(this.#answer)) {
       (this.#answer as Signal.State<AnswerValue[] | null>).set(value);
     }
@@ -62,7 +63,7 @@ export class FlatResponseItem extends BaseResponseItem {
     this.setAnswer(current.filter((_, i) => i !== index));
   }
 
-  toFhir(): QuestionnaireResponseItem {
+  toFhir(options?: ToFhirOptions): QuestionnaireResponseItem {
     const result: QuestionnaireResponseItem = { linkId: this.linkId };
 
     if (this.id) result.id = this.id;
@@ -71,7 +72,10 @@ export class FlatResponseItem extends BaseResponseItem {
     const values = this.answerValues;
     if (values && values.length > 0) result.answer = values;
 
-    const childItems = this.items.map((child) => child.toFhir());
+    const children = options?.excludeDisabled
+      ? this.items.filter((child) => child.enabled)
+      : this.items;
+    const childItems = children.map((child) => child.toFhir(options));
     if (childItems.length > 0) result.item = childItems;
 
     return result;

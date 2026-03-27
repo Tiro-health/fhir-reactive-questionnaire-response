@@ -4,6 +4,7 @@ import type {
   QuestionnaireResponseAnswer,
   QuestionnaireResponseItem,
 } from "./types.js";
+import type { ToFhirOptions } from "./QuestionnaireResponse.js";
 import type { ResponseItem } from "./ResponseItem.js";
 import { ResponseAnswer } from "./ResponseAnswer.js";
 import { BaseResponseItem, type BaseResponseItemInit } from "./BaseResponseItem.js";
@@ -39,6 +40,7 @@ export class AnswerEntryResponseItem extends BaseResponseItem {
   }
 
   setAnswer(value: AnswerValue[]): void {
+    if (this.readOnly) return;
     const entries = this.#answerEntries.get();
     const minLen = Math.min(value.length, entries.length);
     for (let i = 0; i < minLen; i++) {
@@ -47,6 +49,7 @@ export class AnswerEntryResponseItem extends BaseResponseItem {
   }
 
   addAnswer(value: AnswerValue): void {
+    if (this.readOnly) return;
     const entry = this.#buildAnswerEntry(value);
     this.#answerEntries.set([...this.#answerEntries.get(), entry]);
   }
@@ -65,7 +68,7 @@ export class AnswerEntryResponseItem extends BaseResponseItem {
     this.#answerEntries.set(entries.filter((_, i) => i !== index));
   }
 
-  toFhir(): QuestionnaireResponseItem {
+  toFhir(options?: ToFhirOptions): QuestionnaireResponseItem {
     const result: QuestionnaireResponseItem = { linkId: this.linkId };
 
     if (this.id) result.id = this.id;
@@ -75,7 +78,10 @@ export class AnswerEntryResponseItem extends BaseResponseItem {
     if (entries.length > 0) {
       result.answer = entries.map((entry) => {
         const ans: QuestionnaireResponseAnswer = { ...entry.value };
-        const childItems = entry.items.map((child) => child.toFhir());
+        const children = options?.excludeDisabled
+          ? entry.items.filter((child) => child.enabled)
+          : entry.items;
+        const childItems = children.map((child) => child.toFhir(options));
         if (childItems.length > 0) ans.item = childItems;
         return ans;
       });

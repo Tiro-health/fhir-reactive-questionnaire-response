@@ -1,5 +1,6 @@
 // Model
 export { QuestionnaireResponseModel } from "./model/QuestionnaireResponse.js";
+export type { QuestionnaireResponseStatus, ToFhirOptions } from "./model/QuestionnaireResponse.js";
 export type { ResponseItem } from "./model/ResponseItem.js";
 export { BaseResponseItem } from "./model/BaseResponseItem.js";
 export { FlatResponseItem } from "./model/FlatResponseItem.js";

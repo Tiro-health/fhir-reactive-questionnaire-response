@@ -171,5 +171,5 @@ export abstract class BaseResponseItem implements ResponseItem {
   abstract setAnswer(value: AnswerValue[]): void;
   abstract addAnswer(value: AnswerValue): void;
   abstract removeAnswer(index: number): void;
-  abstract toFhir(): QuestionnaireResponseItem;
+  abstract toFhir(options?: import("./QuestionnaireResponse.js").ToFhirOptions): QuestionnaireResponseItem;
 }
