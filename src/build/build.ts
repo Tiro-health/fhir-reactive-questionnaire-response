@@ -178,6 +178,7 @@ function buildItem(
     text: definition.text ?? "",
     type,
     id: responseItem?.id,
+    answerConstraint: definition.answerConstraint,
     initialAnswers,
     enabledResolver,
     items: children,

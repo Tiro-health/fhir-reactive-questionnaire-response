@@ -21,6 +21,7 @@ export interface BaseResponseItemInit {
   text: string;
   type: QuestionnaireItemType;
   id?: string;
+  answerConstraint?: "optionsOnly" | "optionsOrType" | "optionsOrString";
   initialAnswers: AnswerValue[];
   enabledResolver: EnabledResolver;
   items: ResponseItem[];
@@ -35,6 +36,7 @@ export abstract class BaseResponseItem implements ResponseItem {
   readonly linkId: string;
   readonly text: string;
   readonly type: QuestionnaireItemType;
+  readonly answerConstraint: "optionsOnly" | "optionsOrType" | "optionsOrString" | undefined;
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
   readonly parent: ResponseNode;
@@ -50,6 +52,7 @@ export abstract class BaseResponseItem implements ResponseItem {
     this.linkId = opts.linkId;
     this.text = opts.text;
     this.type = opts.type;
+    this.answerConstraint = opts.answerConstraint;
     this.#items = new Signal.State(opts.items);
     this.answerOptions = opts.answerOptions;
     this.parent = opts.parent;
