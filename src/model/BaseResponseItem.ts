@@ -21,6 +21,7 @@ export interface BaseResponseItemInit {
   text: string;
   type: QuestionnaireItemType;
   id?: string;
+  answerConstraint?: "optionsOnly" | "optionsOrType" | "optionsOrString";
   disabledDisplay?: "hidden" | "protected";
   required?: boolean;
   readOnly?: boolean;
@@ -39,6 +40,7 @@ export abstract class BaseResponseItem implements ResponseItem {
   readonly linkId: string;
   readonly text: string;
   readonly type: QuestionnaireItemType;
+  readonly answerConstraint: "optionsOnly" | "optionsOrType" | "optionsOrString" | undefined;
   readonly disabledDisplay: "hidden" | "protected" | undefined;
   readonly required: boolean;
   readonly readOnly: boolean;
@@ -58,6 +60,7 @@ export abstract class BaseResponseItem implements ResponseItem {
     this.linkId = opts.linkId;
     this.text = opts.text;
     this.type = opts.type;
+    this.answerConstraint = opts.answerConstraint;
     this.disabledDisplay = opts.disabledDisplay;
     this.required = opts.required ?? false;
     this.readOnly = opts.readOnly ?? false;
