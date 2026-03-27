@@ -179,6 +179,10 @@ function buildItem(
     type,
     id: responseItem?.id,
     answerConstraint: definition.answerConstraint,
+    disabledDisplay: definition.disabledDisplay,
+    required: definition.required,
+    readOnly: definition.readOnly,
+    repeats: definition.repeats,
     initialAnswers,
     enabledResolver,
     items: children,
@@ -281,6 +285,9 @@ function stripAnswerValue(answer: AnswerValue): AnswerValue {
     if (answer[key] !== undefined) {
       (result as Record<string, unknown>)[key] = answer[key];
     }
+  }
+  if (answer.extension) {
+    result.extension = answer.extension;
   }
   return result;
 }

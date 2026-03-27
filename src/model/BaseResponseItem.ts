@@ -22,6 +22,10 @@ export interface BaseResponseItemInit {
   type: QuestionnaireItemType;
   id?: string;
   answerConstraint?: "optionsOnly" | "optionsOrType" | "optionsOrString";
+  disabledDisplay?: "hidden" | "protected";
+  required?: boolean;
+  readOnly?: boolean;
+  repeats?: boolean;
   initialAnswers: AnswerValue[];
   enabledResolver: EnabledResolver;
   items: ResponseItem[];
@@ -37,6 +41,10 @@ export abstract class BaseResponseItem implements ResponseItem {
   readonly text: string;
   readonly type: QuestionnaireItemType;
   readonly answerConstraint: "optionsOnly" | "optionsOrType" | "optionsOrString" | undefined;
+  readonly disabledDisplay: "hidden" | "protected" | undefined;
+  readonly required: boolean;
+  readonly readOnly: boolean;
+  readonly repeats: boolean;
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
   readonly parent: ResponseNode;
@@ -53,6 +61,10 @@ export abstract class BaseResponseItem implements ResponseItem {
     this.text = opts.text;
     this.type = opts.type;
     this.answerConstraint = opts.answerConstraint;
+    this.disabledDisplay = opts.disabledDisplay;
+    this.required = opts.required ?? false;
+    this.readOnly = opts.readOnly ?? false;
+    this.repeats = opts.repeats ?? false;
     this.#items = new Signal.State(opts.items);
     this.answerOptions = opts.answerOptions;
     this.parent = opts.parent;

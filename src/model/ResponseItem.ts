@@ -29,6 +29,10 @@ export interface ResponseItem extends ResponseNode {
   readonly text: string;
   readonly type: QuestionnaireItemType;
   readonly answerConstraint: "optionsOnly" | "optionsOrType" | "optionsOrString" | undefined;
+  readonly disabledDisplay: "hidden" | "protected" | undefined;
+  readonly required: boolean;
+  readonly readOnly: boolean;
+  readonly repeats: boolean;
   readonly answerOptions: AnswerOption[];
   readonly calculatedExpression: ParsedExpression | null;
   parent: ResponseNode;
