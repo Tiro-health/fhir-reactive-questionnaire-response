@@ -88,6 +88,22 @@ export abstract class BaseResponseItem implements ResponseItem {
     return this.#enabled.get();
   }
 
+  get visible(): boolean {
+    return this.enabled || this.disabledDisplay !== "hidden";
+  }
+
+  get visibleItems(): ResponseItem[] {
+    return this.items.filter((i) => i.visible);
+  }
+
+  get hasVisibleItems(): boolean {
+    return this.items.some((i) => i.visible);
+  }
+
+  get enabledAnswerOptions(): AnswerOption[] {
+    return this.answerOptions.filter((o) => o.enabled);
+  }
+
   get dirty(): boolean {
     return !compare(this.answerValues ?? [], this.initialAnswers);
   }

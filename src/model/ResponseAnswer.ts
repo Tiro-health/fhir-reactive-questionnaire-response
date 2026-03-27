@@ -23,4 +23,12 @@ export class ResponseAnswer {
   setValue(v: AnswerValue): void {
     this.#value.set(v);
   }
+
+  get visibleItems(): ResponseItem[] {
+    return this.items.filter((i) => i.visible);
+  }
+
+  get hasVisibleItems(): boolean {
+    return this.items.some((i) => i.visible);
+  }
 }
