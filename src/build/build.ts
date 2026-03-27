@@ -281,6 +281,9 @@ function stripAnswerValue(answer: AnswerValue): AnswerValue {
       (result as Record<string, unknown>)[key] = answer[key];
     }
   }
+  if (answer.extension) {
+    result.extension = answer.extension;
+  }
   return result;
 }
 
