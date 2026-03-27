@@ -59,6 +59,7 @@ export interface AnswerValue {
   valueDateTime?: string;
   valueTime?: string;
   valueUri?: string;
+  extension?: Extension[];
 }
 
 export const ANSWER_VALUE_KEYS = [
