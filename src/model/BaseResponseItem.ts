@@ -3,6 +3,7 @@ import type {
   AnswerValue,
   QuestionnaireItemType,
   QuestionnaireResponseItem,
+  ValidationError,
 } from "./types.js";
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
@@ -105,6 +106,21 @@ export abstract class BaseResponseItem implements ResponseItem {
 
   get enabledAnswerOptions(): AnswerOption[] {
     return this.answerOptions.filter((o) => o.enabled);
+  }
+
+  get errors(): readonly ValidationError[] {
+    const errors: ValidationError[] = [];
+    if (
+      this.required &&
+      (this.answerValues === null || this.answerValues.length === 0)
+    ) {
+      errors.push({ type: "required", message: "This field is required" });
+    }
+    return errors;
+  }
+
+  get valid(): boolean {
+    return this.errors.length === 0;
   }
 
   get dirty(): boolean {

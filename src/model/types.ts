@@ -143,3 +143,10 @@ export interface QuestionnaireResponse {
   questionnaire: string;
   item?: QuestionnaireResponseItem[];
 }
+
+export type ValidationErrorType = "required";
+
+export interface ValidationError {
+  type: ValidationErrorType;
+  message: string;
+}
