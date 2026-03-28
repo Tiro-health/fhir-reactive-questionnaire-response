@@ -1,6 +1,6 @@
 # Form State Manager — Design Note
 
-> Consolidation of the [Notion backlog entry](https://www.notion.so/311bd303e1d8804f9498d55a023b2e22) and the Obsidian gap analysis (2026-02-23).
+> Consolidation of the [Notion backlog entry](https://www.notion.so/311bd303e1d8804f9498d55a023b2e22) and the Obsidian gap analysis (2026-02-23). Updated 2026-03-28.
 
 ## Problem
 
@@ -12,37 +12,45 @@ We are hitting the limits of third-party form libraries:
 
 ## Approach
 
-Big-bang replacement. The signals prototype must reach full feature parity with the current report-renderer before swapping. No incremental migration path.
+The core library is framework-agnostic, built on TC39 Signals (`@lit-labs/signals`). Framework bindings are provided as separate entry points (e.g., `fhir-reactive-questionnaire-response/react`). Migration from the current report-renderer is incremental — React hooks wrap existing logic now (v1) and swap to signal-backed implementations later (v2) without changing renderer code.
+
+## Architecture
+
+- **Model** (`src/model/`) — `ResponseItem` tree with reactive signals for answers, enabled state, validation
+- **Build** (`src/build/`) — `buildQuestionnaireResponse()` factory that wires the signal graph from a Questionnaire + optional QuestionnaireResponse
+- **R4 compat** (`src/r4/`) — Bidirectional transforms between FHIR R4 and R5 types. Internal model is R5-native.
+- **History** (`src/history.ts`) — Undo/redo via full QuestionnaireResponse snapshots. See [docs/undo-redo.md](docs/undo-redo.md).
+- **React bindings** (`src/react/`) — Thin hooks that subscribe to signals via `Signal.subtle.Watcher` + `useState`. Optional peer dependency.
 
 ## Feature Matrix
 
-### Covered by the signals prototype
+### Implemented
 
 - [x] Reactive answer state per item
 - [x] Calculated expressions (FHIRPath)
 - [x] enableWhen — structured conditions
-- [x] enableWhen — FHIRPath expressions (`enableExpression`)
-- [x] Answer option toggles (restriction)
+- [x] enableWhen — FHIRPath expressions (`enableWhenExpression`)
+- [x] Answer option toggles (restriction via `answerOptionsToggleExpression`)
 - [x] Dirty/touched tracking
 - [x] FHIR QuestionnaireResponse serialization
 - [x] Hydration from existing QuestionnaireResponse
+- [x] Repeating groups — append, remove, reorder instances
+- [x] Filter disabled items from serialized output — `toFhir({ excludeDisabled: true })`
+- [x] Submit flow — reactive `status`, `submit()` method
+- [x] Read-only enforcement — `setAnswer`/`addAnswer` no-op on `readOnly` items
+- [x] Local validation — `valid`/`errors` with required-field and answerConstraint checks
+- [x] Questionnaire metadata on ResponseItem — `disabledDisplay`, `required`, `readOnly`, `repeats`, `answerConstraint`
+- [x] Derived visibility — `visible`, `visibleItems`, `hasVisibleItems`, `enabledAnswerOptions`
+- [x] Extension preservation on answerOption values
+- [x] Arbitrary item IDs — external IDs preserved, new instances get UUIDs
+- [x] R4/R5 bidirectional transforms (answerConstraint round-trip documented as lossy for `optionsOrType`)
+- [x] React binding layer — context, per-item hooks, `useSignalValue` primitive
+- [x] Undo/redo history — see [docs/undo-redo.md](docs/undo-redo.md)
 
 ### Gaps to close
 
-#### Repeating groups
-- [ ] Append / remove group instance
-- [ ] Reorder group instances
-
 #### Input binding
 - [ ] Generate a stable path usable as `name` attribute for `<input>` elements
-
-#### Enabled-state logic
-- [ ] Cascade of enabled state through nested items
-- [ ] Filter disabled items from serialized output
-- [ ] Check empty questions after disable
-
-#### Undo / redo
-- [ ] Undo / redo history — see [docs/undo-redo.md](docs/undo-redo.md)
 
 #### Async operations
 - [ ] Validation via FHIR `$validate`
@@ -74,7 +82,3 @@ Big-bang replacement. The signals prototype must reach full feature parity with 
 - [ ] `setResponse()` with merge strategy
 - [ ] `clear()`
 - [ ] `onResponseChange` callback
-
-#### UX state
-- [ ] Submit flow and status transitions
-- [ ] Read-only items
