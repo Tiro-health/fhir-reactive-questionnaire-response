@@ -5,7 +5,7 @@ import type {
   QuestionnaireResponseItem,
 } from "./types.js";
 import type { AnswerOption } from "./AnswerOption.js";
-import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
+import type { QuestionnaireResponseModel, ToFhirOptions } from "./QuestionnaireResponse.js";
 import type { ParsedExpression } from "../build/extensions.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 
@@ -64,5 +64,5 @@ export interface ResponseItem extends ResponseNode {
   addItem(linkId: string, initial?: QuestionnaireResponseItem): ResponseItem;
   removeItem(itemId: string): void;
   moveItem(linkId: string, fromIndex: number, toIndex: number): void;
-  toFhir(): QuestionnaireResponseItem;
+  toFhir(options?: ToFhirOptions): QuestionnaireResponseItem;
 }

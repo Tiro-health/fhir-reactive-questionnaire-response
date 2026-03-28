@@ -8,11 +8,23 @@ import type { ResponseItem, ResponseNode } from "./ResponseItem.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 import { addItemTo, removeItemFrom, moveItemIn } from "./mutations.js";
 
+export type QuestionnaireResponseStatus =
+  | "in-progress"
+  | "completed"
+  | "amended"
+  | "entered-in-error"
+  | "stopped";
+
+export interface ToFhirOptions {
+  excludeDisabled?: boolean;
+}
+
 export class QuestionnaireResponseModel implements ResponseNode {
   readonly resourceType = "QuestionnaireResponse" as const;
   readonly id: string | undefined;
-  readonly status: string;
   readonly questionnaire: string;
+
+  readonly #status: Signal.State<QuestionnaireResponseStatus>;
 
   readonly #items: Signal.State<ResponseItem[]>;
   readonly itemsByLinkId: Map<string, ResponseItem[]>;
@@ -34,6 +46,14 @@ export class QuestionnaireResponseModel implements ResponseNode {
       ) => ResponseItem)
     | null = null;
 
+  get status(): QuestionnaireResponseStatus {
+    return this.#status.get();
+  }
+
+  set status(value: QuestionnaireResponseStatus) {
+    this.#status.set(value);
+  }
+
   get items(): ResponseItem[] {
     return this.#items.get();
   }
@@ -54,7 +74,9 @@ export class QuestionnaireResponseModel implements ResponseNode {
     items: ResponseItem[];
   }) {
     this.id = opts.id;
-    this.status = opts.status;
+    this.#status = new Signal.State(
+      opts.status as QuestionnaireResponseStatus,
+    );
     this.questionnaire = opts.questionnaire ?? "";
     this.#items = new Signal.State(opts.items);
 
@@ -108,7 +130,7 @@ export class QuestionnaireResponseModel implements ResponseNode {
     moveItemIn(this, linkId, fromIndex, toIndex);
   }
 
-  toFhir(): QuestionnaireResponse {
+  toFhir(options?: ToFhirOptions): QuestionnaireResponse {
     const result: QuestionnaireResponse = {
       resourceType: "QuestionnaireResponse",
       status: this.status,
@@ -117,10 +139,24 @@ export class QuestionnaireResponseModel implements ResponseNode {
 
     if (this.id) result.id = this.id;
 
-    const items = this.items.map((item) => item.toFhir());
+    const serialize = options?.excludeDisabled
+      ? (items: ResponseItem[]) =>
+          items
+            .filter((item) => item.enabled)
+            .map((item) => item.toFhir(options))
+      : (items: ResponseItem[]) => items.map((item) => item.toFhir(options));
+
+    const items = serialize(this.items);
     if (items.length > 0) result.item = items;
 
     return result;
+  }
+
+  submit(
+    status: QuestionnaireResponseStatus = "completed",
+  ): QuestionnaireResponse {
+    this.#status.set(status);
+    return this.toFhir({ excludeDisabled: true });
   }
 
   forEachItem(fn: (item: ResponseItem) => void): void {
