@@ -3,6 +3,7 @@ import type {
   AnswerValue,
   QuestionnaireItemType,
   QuestionnaireResponseItem,
+  ValidationError,
 } from "./types.js";
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel, ToFhirOptions } from "./QuestionnaireResponse.js";
@@ -50,6 +51,8 @@ export interface ResponseItem extends ResponseNode {
   readonly visibleItems: ResponseItem[];
   readonly hasVisibleItems: boolean;
   readonly enabledAnswerOptions: AnswerOption[];
+  readonly valid: boolean;
+  readonly errors: readonly ValidationError[];
   readonly dirty: boolean;
   readonly touched: boolean;
 

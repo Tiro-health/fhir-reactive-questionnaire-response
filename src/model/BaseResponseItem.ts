@@ -3,10 +3,11 @@ import type {
   AnswerValue,
   QuestionnaireItemType,
   QuestionnaireResponseItem,
+  ValidationError,
 } from "./types.js";
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
-import type { ParsedExpression } from "../build/extensions.js";
+import { answerValuesMatch, type ParsedExpression } from "../build/extensions.js";
 import type { EnabledResolver, ResponseItem, ResponseNode } from "./ResponseItem.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 import compare from "./compare.js";
@@ -105,6 +106,51 @@ export abstract class BaseResponseItem implements ResponseItem {
 
   get enabledAnswerOptions(): AnswerOption[] {
     return this.answerOptions.filter((o) => o.enabled);
+  }
+
+  get errors(): readonly ValidationError[] {
+    const errors: ValidationError[] = [];
+    if (
+      this.required &&
+      (this.answerValues === null || this.answerValues.length === 0)
+    ) {
+      errors.push({ type: "required", message: "This field is required" });
+    }
+
+    // answerConstraint validation — only when options exist and answers are present
+    const answers = this.answerValues;
+    if (this.answerOptions.length > 0 && answers && answers.length > 0) {
+      const constraint = this.answerConstraint ?? "optionsOnly";
+      for (const answer of answers) {
+        const matchesOption = this.answerOptions.some((opt) =>
+          answerValuesMatch(opt.value, answer),
+        );
+        if (matchesOption) continue;
+
+        if (constraint === "optionsOnly") {
+          errors.push({
+            type: "answerConstraint",
+            message: "Answer must be one of the predefined options",
+          });
+        } else if (
+          constraint === "optionsOrString" &&
+          answer.valueString === undefined
+        ) {
+          errors.push({
+            type: "answerConstraint",
+            message:
+              "Answer must be a predefined option or a free-text string",
+          });
+        }
+        // optionsOrType: any value of the item's type is allowed — no constraint error
+      }
+    }
+
+    return errors;
+  }
+
+  get valid(): boolean {
+    return this.errors.length === 0;
   }
 
   get dirty(): boolean {
