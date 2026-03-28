@@ -42,7 +42,7 @@ Big-bang replacement. The signals prototype must reach full feature parity with 
 - [ ] Check empty questions after disable
 
 #### Undo / redo
-- [ ] Undo / redo history
+- [ ] Undo / redo history — see [docs/undo-redo.md](docs/undo-redo.md)
 
 #### Async operations
 - [ ] Validation via FHIR `$validate`
