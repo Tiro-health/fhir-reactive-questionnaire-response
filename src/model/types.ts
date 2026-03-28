@@ -144,9 +144,50 @@ export interface QuestionnaireResponse {
   item?: QuestionnaireResponseItem[];
 }
 
-export type ValidationErrorType = "required" | "answerConstraint";
+export type IssueSeverity = "fatal" | "error" | "warning" | "information";
 
-export interface ValidationError {
-  type: ValidationErrorType;
-  message: string;
+export type IssueType =
+  | "invalid"
+  | "structure"
+  | "required"
+  | "value"
+  | "invariant"
+  | "security"
+  | "login"
+  | "unknown"
+  | "expired"
+  | "forbidden"
+  | "suppressed"
+  | "processing"
+  | "not-supported"
+  | "duplicate"
+  | "multiple-matches"
+  | "not-found"
+  | "deleted"
+  | "too-long"
+  | "code-invalid"
+  | "extension"
+  | "too-costly"
+  | "business-rule"
+  | "conflict"
+  | "transient"
+  | "lock-error"
+  | "no-store"
+  | "exception"
+  | "timeout"
+  | "incomplete"
+  | "throttled"
+  | "informational";
+
+export interface OperationOutcomeIssue {
+  severity: IssueSeverity;
+  code: IssueType;
+  diagnostics?: string;
+  details?: { text?: string; coding?: Coding[] };
+  expression?: string[];
+}
+
+export interface OperationOutcome {
+  resourceType: "OperationOutcome";
+  issue: OperationOutcomeIssue[];
 }

@@ -13,7 +13,8 @@ import {
   useVisible,
   useAnswerValues,
   useAnswerOptions,
-  useValidation,
+  useIssues,
+  useOutcomeIssues,
   useVisibleChildren,
   useDirty,
   useTouched,
@@ -214,23 +215,58 @@ describe("React hooks", () => {
     });
   });
 
-  describe("useValidation", () => {
-    it("tracks validation state", () => {
+  describe("useIssues", () => {
+    it("tracks issues reactively after applyOutcome", () => {
       const model = buildQuestionnaireResponse(questionnaire);
       const name = model.getItems("name")[0];
 
-      const { result } = renderHook(() => useValidation(name), {
+      const { result } = renderHook(() => useIssues(name), {
         wrapper: createWrapper(model),
       });
 
-      expect(result.current.valid).toBe(false);
-      expect(result.current.errors).toHaveLength(1);
+      expect(result.current).toHaveLength(0);
 
       act(() => {
-        name.setAnswer([{ valueString: "Alice" }]);
+        model.applyOutcome({
+          resourceType: "OperationOutcome",
+          issue: [
+            {
+              severity: "error",
+              code: "required",
+              diagnostics: "Name is required",
+              expression: ["QuestionnaireResponse.item[0]"],
+            },
+          ],
+        });
       });
-      expect(result.current.valid).toBe(true);
-      expect(result.current.errors).toHaveLength(0);
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0].severity).toBe("error");
+    });
+  });
+
+  describe("useOutcomeIssues", () => {
+    it("tracks unroutable issues", () => {
+      const model = buildQuestionnaireResponse(questionnaire);
+
+      const { result } = renderHook(() => useOutcomeIssues(), {
+        wrapper: createWrapper(model),
+      });
+
+      expect(result.current).toHaveLength(0);
+
+      act(() => {
+        model.applyOutcome({
+          resourceType: "OperationOutcome",
+          issue: [
+            {
+              severity: "error",
+              code: "business-rule",
+              diagnostics: "Form-level error",
+            },
+          ],
+        });
+      });
+      expect(result.current).toHaveLength(1);
     });
   });
 
