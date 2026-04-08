@@ -12,3 +12,16 @@ export function evaluateFhirPath(
     r5model,
   ) as unknown[];
 }
+
+export function evaluateFhirPathWithVars(
+  expression: string,
+  resource: { resourceType: string },
+  vars: Record<string, unknown>,
+): unknown[] {
+  return fhirpath.evaluate(
+    resource,
+    expression,
+    { resource, ...vars },
+    r5model,
+  ) as unknown[];
+}
