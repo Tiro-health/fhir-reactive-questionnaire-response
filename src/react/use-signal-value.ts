@@ -38,8 +38,12 @@ export function useSignalValue<T>(compute: () => T): T {
   }, []);
 
   const { computed, watcher } = stateRef.current;
-  // Read the value and clear any pending notifications
+  // Read the value and re-arm the watcher.
+  // getPending() alone does not reset the watcher's internal dirty flag —
+  // watcher.watch() (no-args form) is required to reset it so the notify
+  // callback can fire again on the next signal change.
   const value = computed.get();
   watcher.getPending();
+  watcher.watch();
   return value;
 }
