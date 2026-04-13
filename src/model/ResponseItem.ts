@@ -1,9 +1,9 @@
 import type { Signal } from "@lit-labs/signals";
 import type {
   AnswerValue,
+  OperationOutcomeIssue,
   QuestionnaireItemType,
   QuestionnaireResponseItem,
-  ValidationError,
 } from "./types.js";
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel, ToFhirOptions } from "./QuestionnaireResponse.js";
@@ -52,7 +52,9 @@ export interface ResponseItem extends ResponseNode {
   readonly hasVisibleItems: boolean;
   readonly enabledAnswerOptions: AnswerOption[];
   readonly valid: boolean;
-  readonly errors: readonly ValidationError[];
+  readonly issues: readonly OperationOutcomeIssue[];
+  /** @internal Set externally-reported issues. Called by applyOutcome(). */
+  _setIssues(issues: readonly OperationOutcomeIssue[]): void;
   readonly dirty: boolean;
   readonly touched: boolean;
 

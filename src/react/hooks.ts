@@ -1,7 +1,7 @@
 import type { ResponseItem } from "../model/ResponseItem.js";
 import type { ResponseAnswer } from "../model/ResponseAnswer.js";
 import type { AnswerOption } from "../model/AnswerOption.js";
-import type { AnswerValue, ValidationError } from "../model/types.js";
+import type { AnswerValue, OperationOutcomeIssue } from "../model/types.js";
 import { useQuestionnaireResponse } from "./context.js";
 import { useSignalValue } from "./use-signal-value.js";
 
@@ -58,16 +58,18 @@ export function useAnswerOptions(item: ResponseItem): AnswerOption[] {
 }
 
 /**
- * Subscribe to an item's validation state.
+ * Subscribe to an item's issues from external validation (OperationOutcome).
  */
-export function useValidation(item: ResponseItem): {
-  valid: boolean;
-  errors: readonly ValidationError[];
-} {
-  return useSignalValue(() => ({
-    valid: item.valid,
-    errors: item.errors,
-  }));
+export function useIssues(item: ResponseItem): readonly OperationOutcomeIssue[] {
+  return useSignalValue(() => item.issues);
+}
+
+/**
+ * Subscribe to unroutable issues on the root model (issues that couldn't be mapped to a specific item).
+ */
+export function useOutcomeIssues(): readonly OperationOutcomeIssue[] {
+  const model = useQuestionnaireResponse();
+  return useSignalValue(() => model.unroutableIssues);
 }
 
 /**
