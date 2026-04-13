@@ -85,6 +85,57 @@ export function getAnswerOptionsToggleExpressions(
   return results;
 }
 
+export const OPTION_RESTRICTION_URL =
+  "http://hl7.org/fhir/StructureDefinition/questionnaire-optionRestriction";
+
+export interface ParsedOptionRestriction {
+  option: AnswerValue;
+  expression: ParsedExpression;
+}
+
+/**
+ * Parses questionnaire-optionRestriction extensions.
+ * When the expression evaluates to true, the option should be hidden/disabled.
+ * (Semantics are inverted vs answerOptionsToggleExpression where true = enabled.)
+ */
+export function getOptionRestrictions(
+  extensions: Extension[] | undefined,
+): ParsedOptionRestriction[] {
+  if (!extensions) return [];
+
+  const results: ParsedOptionRestriction[] = [];
+
+  for (const ext of extensions) {
+    if (ext.url !== OPTION_RESTRICTION_URL || !ext.extension) continue;
+
+    let option: AnswerValue | null = null;
+    let expression: ParsedExpression | null = null;
+
+    for (const sub of ext.extension) {
+      if (sub.url === "option") {
+        const opt: AnswerValue = {};
+        if (sub.valueCoding !== undefined) opt.valueCoding = sub.valueCoding;
+        else if (sub.valueString !== undefined) opt.valueString = sub.valueString;
+        else if (sub.valueInteger !== undefined) opt.valueInteger = sub.valueInteger;
+        else if (sub.valueDecimal !== undefined) opt.valueDecimal = sub.valueDecimal;
+        else if (sub.valueBoolean !== undefined) opt.valueBoolean = sub.valueBoolean;
+        option = opt;
+      } else if (sub.url === "expression" && sub.valueExpression) {
+        expression = {
+          language: sub.valueExpression.language,
+          expression: sub.valueExpression.expression,
+        };
+      }
+    }
+
+    if (option !== null && expression) {
+      results.push({ option, expression });
+    }
+  }
+
+  return results;
+}
+
 export function answerValuesMatch(a: AnswerValue, b: AnswerValue): boolean {
   if (a.valueCoding && b.valueCoding) {
     return (

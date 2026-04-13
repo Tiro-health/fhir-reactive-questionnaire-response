@@ -46,6 +46,8 @@ export interface Extension {
 
 export interface AnswerOption extends AnswerValue {
   initialSelected?: boolean;
+  optionExclusive?: boolean;
+  itemWeight?: number;
 }
 
 export interface AnswerValue {
@@ -116,11 +118,18 @@ export interface QuestionnaireItem {
   extension?: Extension[];
 }
 
+export interface Variable {
+  name: string;
+  language: string;
+  expression: string;
+}
+
 export interface Questionnaire {
   resourceType: "Questionnaire";
   id?: string;
   status: string;
   title?: string;
+  variable?: Variable[];
   item?: QuestionnaireItem[];
 }
 

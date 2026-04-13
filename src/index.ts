@@ -17,9 +17,11 @@ export {
   CALCULATED_EXPRESSION,
   ENABLE_WHEN_EXPRESSION,
   ANSWER_OPTIONS_TOGGLE_EXPRESSION,
+  OPTION_RESTRICTION_URL,
   getCalculatedExpression,
   getEnableWhenExpression,
   getAnswerOptionsToggleExpressions,
+  getOptionRestrictions,
   answerValuesMatch,
 } from "./build/extensions.js";
 

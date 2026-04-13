@@ -22,9 +22,10 @@ import {
   getCalculatedExpression,
   getEnableWhenExpression,
   getAnswerOptionsToggleExpressions,
+  getOptionRestrictions,
   answerValuesMatch,
 } from "./extensions.js";
-import { evaluateFhirPath } from "./fhirpath-context.js";
+import { evaluateFhirPath, evaluateFhirPathWithVars } from "./fhirpath-context.js";
 import { evaluateEnableWhen } from "./enable-when.js";
 
 /** Shared signal for items that are unconditionally enabled. */
@@ -44,11 +45,14 @@ export function buildQuestionnaireResponse(
   // Index all questionnaire item definitions by linkId
   indexDefinitions(questionnaire.item ?? [], root.definitions);
 
+  const variables = questionnaire.variable ?? [];
+
   const items = hydrateChildren(
     questionnaire.item ?? [],
     response?.item ?? [],
     root,
     root,
+    variables,
   );
 
   // Populate root.items via signal
@@ -77,6 +81,7 @@ function hydrateChildren(
   responseItems: QuestionnaireResponseItem[],
   parent: ResponseNode,
   root: QuestionnaireResponseModel,
+  variables: { name: string; language: string; expression: string }[] = [],
 ): ResponseItem[] {
   const result: ResponseItem[] = [];
   const consumed = new Set<number>();
@@ -84,19 +89,20 @@ function hydrateChildren(
   for (const def of definitions) {
     const matches: QuestionnaireResponseItem[] = [];
     for (let i = 0; i < responseItems.length; i++) {
-      if (!consumed.has(i) && responseItems[i].linkId === def.linkId) {
-        matches.push(responseItems[i]);
+      const ri = responseItems[i];
+      if (!consumed.has(i) && ri !== undefined && ri.linkId === def.linkId) {
+        matches.push(ri);
         consumed.add(i);
       }
     }
 
     if (matches.length === 0) {
-      const item = buildItem(def, undefined, parent, root);
+      const item = buildItem(def, undefined, parent, root, variables);
       root.registerItem(item);
       result.push(item);
     } else {
       for (const ri of matches) {
-        const item = buildItem(def, ri, parent, root);
+        const item = buildItem(def, ri, parent, root, variables);
         root.registerItem(item);
         result.push(item);
       }
@@ -118,6 +124,7 @@ function buildItem(
   responseItem: QuestionnaireResponseItem | undefined,
   parent: ResponseNode,
   root: QuestionnaireResponseModel,
+  variables: { name: string; language: string; expression: string }[] = [],
 ): ResponseItem {
   const calculatedExpression = getCalculatedExpression(definition.extension);
   const enableWhenExpression = getEnableWhenExpression(definition.extension);
@@ -141,6 +148,7 @@ function buildItem(
         ans.item ?? [],
         null as unknown as ResponseNode,
         root,
+        variables,
       );
       return new ResponseAnswer(value, entryChildren);
     });
@@ -156,6 +164,7 @@ function buildItem(
       responseItem?.item ?? [],
       null as unknown as ResponseItem,
       root,
+      variables,
     );
   }
 
@@ -171,7 +180,7 @@ function buildItem(
   const enabledResolver = buildEnabledResolver(definition, enableWhenExpression, root);
 
   // Build answer options with toggle signals
-  const answerOptions = buildAnswerOptions(definition, root);
+  const answerOptions = buildAnswerOptions(definition, root, variables);
 
   const shared = {
     linkId: definition.linkId,
@@ -244,6 +253,7 @@ function buildEnabledResolver(
 function buildAnswerOptions(
   definition: QuestionnaireItem,
   root: QuestionnaireResponseModel,
+  variables: { name: string; language: string; expression: string }[] = [],
 ): AnswerOption[] {
   if (!definition.answerOption || definition.answerOption.length === 0)
     return [];
@@ -260,22 +270,70 @@ function buildAnswerOptions(
       }),
   );
 
+  const optionRestrictions = getOptionRestrictions(definition.extension);
+
+  // For each restriction, build a signal: true = option is restricted (hidden).
+  // Evaluate questionnaire-level variables inline so the signal stays reactive.
+  const restrictionSignals = optionRestrictions.map(
+    (restriction) =>
+      new Signal.Computed<boolean>(() => {
+        const vars: Record<string, unknown> = {};
+        for (const variable of variables) {
+          if (variable.language === "text/fhirpath") {
+            const result = evaluateFhirPath(variable.expression, root);
+            vars[variable.name] = result.length === 1 ? result[0] : result;
+          }
+        }
+        const results = evaluateFhirPathWithVars(
+          restriction.expression.expression,
+          root,
+          vars,
+        );
+        return results.length > 0 && results[0] === true;
+      }),
+  );
+
   const alwaysEnabled = ALWAYS_TRUE;
 
   return definition.answerOption.map((opt) => {
     const value: AnswerValue = { ...opt };
     delete (value as Record<string, unknown>).initialSelected;
+    delete (value as Record<string, unknown>).optionExclusive;
+    delete (value as Record<string, unknown>).itemWeight;
 
-    let signal = alwaysEnabled;
+    // Check toggle expressions (true = enabled)
+    let signal: Signal.Computed<boolean> = alwaysEnabled;
     for (let i = 0; i < toggleExpressions.length; i++) {
       const toggle = toggleExpressions[i];
-      if (toggle.options.some((tv) => answerValuesMatch(tv, value))) {
-        signal = toggleSignals[i];
+      const toggleSignal = toggleSignals[i];
+      if (toggle !== undefined && toggleSignal !== undefined && toggle.options.some((tv) => answerValuesMatch(tv, value))) {
+        signal = toggleSignal;
         break;
       }
     }
 
-    return new AnswerOption(value, opt.initialSelected ?? false, signal);
+    // Check option restrictions (true = restricted/disabled — inverted semantics)
+    for (let i = 0; i < optionRestrictions.length; i++) {
+      const restriction = optionRestrictions[i];
+      const restrictionSignal = restrictionSignals[i];
+      if (
+        restriction !== undefined &&
+        restrictionSignal !== undefined &&
+        answerValuesMatch(restriction.option, value)
+      ) {
+        const captured = restrictionSignal;
+        signal = new Signal.Computed<boolean>(() => !captured.get());
+        break;
+      }
+    }
+
+    return new AnswerOption(
+      value,
+      opt.initialSelected ?? false,
+      signal,
+      opt.optionExclusive,
+      opt.itemWeight,
+    );
   });
 }
 
