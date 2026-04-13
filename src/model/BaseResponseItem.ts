@@ -1,13 +1,13 @@
 import { Signal } from "@lit-labs/signals";
 import type {
   AnswerValue,
+  OperationOutcomeIssue,
   QuestionnaireItemType,
   QuestionnaireResponseItem,
-  ValidationError,
 } from "./types.js";
 import type { AnswerOption } from "./AnswerOption.js";
 import type { QuestionnaireResponseModel } from "./QuestionnaireResponse.js";
-import { answerValuesMatch, type ParsedExpression } from "../build/extensions.js";
+import type { ParsedExpression } from "../build/extensions.js";
 import type { EnabledResolver, ResponseItem, ResponseNode } from "./ResponseItem.js";
 import type { ResponseAnswer } from "./ResponseAnswer.js";
 import compare from "./compare.js";
@@ -53,6 +53,7 @@ export abstract class BaseResponseItem implements ResponseItem {
 
   readonly #items: Signal.State<ResponseItem[]>;
   readonly #enabled: Signal.Computed<boolean>;
+  readonly #issues: Signal.State<readonly OperationOutcomeIssue[]>;
   protected readonly initialAnswers: AnswerValue[];
   readonly #touched = new Signal.State(false);
 
@@ -72,6 +73,7 @@ export abstract class BaseResponseItem implements ResponseItem {
     this.root = opts.root;
     this.calculatedExpression = opts.calculatedExpression;
     this.#enabled = new Signal.Computed(() => opts.enabledResolver(this));
+    this.#issues = new Signal.State<readonly OperationOutcomeIssue[]>([]);
     this.initialAnswers = opts.initialAnswers;
   }
 
@@ -108,49 +110,19 @@ export abstract class BaseResponseItem implements ResponseItem {
     return this.answerOptions.filter((o) => o.enabled);
   }
 
-  get errors(): readonly ValidationError[] {
-    const errors: ValidationError[] = [];
-    if (
-      this.required &&
-      (this.answerValues === null || this.answerValues.length === 0)
-    ) {
-      errors.push({ type: "required", message: "This field is required" });
-    }
+  get issues(): readonly OperationOutcomeIssue[] {
+    return this.#issues.get();
+  }
 
-    // answerConstraint validation — only when options exist and answers are present
-    const answers = this.answerValues;
-    if (this.answerOptions.length > 0 && answers && answers.length > 0) {
-      const constraint = this.answerConstraint ?? "optionsOnly";
-      for (const answer of answers) {
-        const matchesOption = this.answerOptions.some((opt) =>
-          answerValuesMatch(opt.value, answer),
-        );
-        if (matchesOption) continue;
-
-        if (constraint === "optionsOnly") {
-          errors.push({
-            type: "answerConstraint",
-            message: "Answer must be one of the predefined options",
-          });
-        } else if (
-          constraint === "optionsOrString" &&
-          answer.valueString === undefined
-        ) {
-          errors.push({
-            type: "answerConstraint",
-            message:
-              "Answer must be a predefined option or a free-text string",
-          });
-        }
-        // optionsOrType: any value of the item's type is allowed — no constraint error
-      }
-    }
-
-    return errors;
+  /** @internal Set externally-reported issues on this item. Called by applyOutcome(). */
+  _setIssues(issues: readonly OperationOutcomeIssue[]): void {
+    this.#issues.set(issues);
   }
 
   get valid(): boolean {
-    return this.errors.length === 0;
+    return !this.issues.some(
+      (i) => i.severity === "error" || i.severity === "fatal",
+    );
   }
 
   get dirty(): boolean {
